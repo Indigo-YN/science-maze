@@ -19,9 +19,11 @@
         }
 
         #game-container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
+            position: fixed; 
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -410,7 +412,7 @@ const STATE = {
 const QUESTIONS_DB = {
     '순물질과 혼합물': [
         { q: "한 가지 물질로만 이루어진 물질은?", options: ["순물질", "혼합물", "화합물", "용액"], a: 0 },
-        { q: "두 가지 이상의 순물질이 성질을 잃지 않고 섞여 있는 것은?", options: ["원소", "화합물", "순물질", "혼합물"], a: 3 },
+        { q: "두 가지 이상의 물질이 성질을 잃지 않고 섞여 있는 것은?", options: ["원소", "화합물", "순물질", "혼합물"], a: 3 },
         { q: "다음 중 순물질에 해당하는 것은?", options: ["공기", "바닷물", "금", "암석"], a: 2 },
         { q: "다음 중 순물질인 것은?", options: ["증류수", "우유", "오렌지 주스", "간장"], a: 0 },
         { q: "다음 중 혼합물에 해당하는 것은?", options: ["구리", "에탄올", "소금물", "산소"], a: 2 },
@@ -539,6 +541,9 @@ let transition = { active: false, alpha: 0, state: 'NONE', callback: null };
 let timeAttackOrder = [];
 const keys = {};
 
+// Delta Time variables
+let lastTime = 0;
+
 function initGame() {
     stage = 1;
     score = 0;
@@ -564,6 +569,7 @@ function initGame() {
     gameState = STATE.COUNTDOWN;
     countdownStart = Date.now();
     warningMessage = "";
+    lastTime = Date.now();
 }
 
 function startStage() {
@@ -628,8 +634,10 @@ function startStage() {
 
     if (gameMode === 'ENDLESS') {
         let deadEndsFound = true;
-        while(deadEndsFound) {
+        let deadEndAttempts = 0; // Infinite loop safety
+        while(deadEndsFound && deadEndAttempts < 100) {
             deadEndsFound = false;
+            deadEndAttempts++;
             let cells = [];
             for(let r=1; r<rows-1; r++) {
                 for(let c=1; c<cols-1; c++) {
@@ -788,6 +796,7 @@ function startStage() {
     
     particles = [];
     gameState = STATE.PLAYING;
+    lastTime = Date.now(); // Reset time delta
 }
 
 function addTeleporterPair(color, shape, idOffset, occupiedSet) {
@@ -835,6 +844,7 @@ function addTeleporterPair(color, shape, idOffset, occupiedSet) {
 function startGameReal() {
     gameState = STATE.PLAYING;
     startTime = Date.now();
+    lastTime = Date.now(); // Sync delta
 }
 
 function spawnGhosts() {
@@ -898,6 +908,15 @@ function getNextMove(gx, gy, px, py) {
 
 function update() {
     updateTransition();
+    
+    // Time Delta Calculation
+    const now = Date.now();
+    const dt = now - lastTime;
+    lastTime = now;
+    
+    // Skip large time jumps (e.g., tab inactive)
+    if (dt > 1000) return; 
+
     if (transition.active && transition.state === 'OUT') {
         const mob = document.getElementById('mobile-controls');
         if(mob) mob.style.opacity = 1 - transition.alpha;
@@ -927,7 +946,7 @@ function update() {
     if (gameState !== STATE.PLAYING) return;
 
     if (gameMode === 'ENDLESS' && ghostSpawnTimer > 0) {
-        ghostSpawnTimer -= 16.6; 
+        ghostSpawnTimer -= dt; // Use Delta Time
         
         let sec = Math.ceil(ghostSpawnTimer / 1000);
         if (ghostSpawnTimer <= 0) {
@@ -939,7 +958,7 @@ function update() {
         }
     }
 
-    // Skill Logic Calculation
+    // Skill Logic Calculation with Delta Time
     let extraTime = 0;
     if (stage >= 5) {
         extraTime = Math.floor((stage - 5) / 5) * 2000;
@@ -947,7 +966,7 @@ function update() {
     skillTotalDuration = Math.min(15000, 5000 + extraTime);
 
     if (skillActive) {
-        skillTimeLeft -= 16.6; // approx 60fps
+        skillTimeLeft -= dt; 
         if (skillTimeLeft <= 0) {
             skillActive = false;
             skillTimeLeft = 0;
@@ -957,7 +976,7 @@ function update() {
         // Stop cooldown recovery if all questions solved
         const allSolved = questionsInStage.length > 0 && questionsInStage.every(q => q.solved);
         if (!allSolved) {
-            skillCooldownLeft -= 16.6;
+            skillCooldownLeft -= dt;
             if (skillCooldownLeft < 0) skillCooldownLeft = 0;
         }
     }
@@ -966,12 +985,17 @@ function update() {
         let nextX = player.x;
         let nextY = player.y;
         
-        const speed = skillActive ? 5.5 : 4;
+        // Frame-rate independent speed adjustment
+        // Base speed 4 is for ~60fps (approx 16.6ms)
+        // Adjusted speed = speed * (dt / 16.6)
+        const moveFactor = dt / 16.6; 
+        const baseSpeed = skillActive ? 5.5 : 4;
+        const currentSpeed = baseSpeed * moveFactor;
 
-        if (keys['ArrowUp'] || keys['w']) { nextY -= speed; player.dir = 'up'; }
-        if (keys['ArrowDown'] || keys['s']) { nextY += speed; player.dir = 'down'; }
-        if (keys['ArrowLeft'] || keys['a']) { nextX -= speed; player.dir = 'left'; }
-        if (keys['ArrowRight'] || keys['d']) { nextX += speed; player.dir = 'right'; }
+        if (keys['ArrowUp'] || keys['w']) { nextY -= currentSpeed; player.dir = 'up'; }
+        if (keys['ArrowDown'] || keys['s']) { nextY += currentSpeed; player.dir = 'down'; }
+        if (keys['ArrowLeft'] || keys['a']) { nextX -= currentSpeed; player.dir = 'left'; }
+        if (keys['ArrowRight'] || keys['d']) { nextX += currentSpeed; player.dir = 'right'; }
 
         if (!checkWallCollision(nextX, player.y)) player.x = nextX;
         if (!checkWallCollision(player.x, nextY)) player.y = nextY;
@@ -991,7 +1015,7 @@ function update() {
     }
 
     for(let i=playerTrail.length-1; i>=0; i--) {
-        playerTrail[i].alpha -= 0.05;
+        playerTrail[i].alpha -= 0.05 * (dt / 16.6); // Adjust fade speed
         if (playerTrail[i].alpha <= 0) playerTrail.splice(i, 1);
     }
 
@@ -1008,7 +1032,7 @@ function update() {
     });
 
     teleporters.forEach(t => {
-        if(t.cooldown > 0) t.cooldown--;
+        if(t.cooldown > 0) t.cooldown -= (dt / 16.6); // Adjust cooldown
         else if(player.active && Math.hypot(player.x - t.x, player.y - t.y) < 20) {
             const dest = teleporters[t.linkIdx];
             player.x = dest.x;
@@ -1092,7 +1116,7 @@ function update() {
                 const dist = Math.hypot(dx, dy);
                 
                 if (dist > 0) {
-                    const moveDist = g.speed;
+                    const moveDist = g.speed * (dt / 16.6); // Adjust speed
                     g.x += (dx / dist) * moveDist;
                     g.y += (dy / dist) * moveDist;
                 }
@@ -2164,19 +2188,22 @@ btns.forEach(id => {
     const el = document.getElementById(id);
     const code = keyMap[id];
     
+    // Add passive: false to allow preventDefault
+    const options = { passive: false };
+
     const handlePress = (e) => {
-        e.preventDefault();
-        if (gameState !== STATE.PLAYING) return; // Prevent interaction if not playing
+        if (e.cancelable) e.preventDefault();
+        if (gameState !== STATE.PLAYING) return; 
         keys[code] = true;
     };
     
     const handleRelease = (e) => {
-        e.preventDefault();
+        if (e.cancelable) e.preventDefault();
         keys[code] = false;
     };
     
-    el.addEventListener('touchstart', handlePress);
-    el.addEventListener('touchend', handleRelease);
+    el.addEventListener('touchstart', handlePress, options);
+    el.addEventListener('touchend', handleRelease, options);
     el.addEventListener('mousedown', handlePress);
     el.addEventListener('mouseup', handleRelease);
     el.addEventListener('mouseleave', handleRelease);
@@ -2328,13 +2355,17 @@ function loop() {
 // 화면 리사이징 처리 함수
 function handleResize() {
     const scaler = document.getElementById('game-scaler');
+    // window.innerWidth/Height는 스크롤바를 포함할 수 있으므로 clientWidth/Height가 안전할 수 있음
+    // 하지만 overflow: hidden body이므로 window도 무방.
+    // 모바일 브라우저 상/하단 바 고려하여 window.innerHeight 사용.
     const w = window.innerWidth;
     const h = window.innerHeight;
     const gameW = 800;
     const gameH = 600;
     
-    // Calculate scale to fit window while maintaining aspect ratio
-    const scale = Math.min(w / gameW, h / gameH);
+    // 화면에 꽉 차게 하되 비율 유지
+    // 약간의 여백을 두어(0.95) 경계선이 잘리는 느낌 방지 및 UI 터치 오류 방지
+    const scale = Math.min(w / gameW, h / gameH) * 0.95; 
     
     scaler.style.transform = `scale(${scale})`;
 }
@@ -2345,6 +2376,50 @@ window.addEventListener('resize', handleResize);
 // 초기 실행 시 리사이징 적용
 handleResize();
 createTitleUI();
+loop();
+
+</script>
+</body>
+</html>
+
+// function definitions must come before loop call if not hoisted properly in strict mode or modules, 
+// though standard JS hoists functions.
+// loop is defined at the bottom in previous file, let's keep it there but ensure it's defined.
+
+function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+}
+
+// 화면 리사이징 처리 함수
+function handleResize() {
+    const scaler = document.getElementById('game-scaler');
+    // window.innerWidth/Height는 스크롤바를 포함할 수 있으므로 clientWidth/Height가 안전할 수 있음
+    // 하지만 overflow: hidden body이므로 window도 무방.
+    // 모바일 브라우저 상/하단 바 고려하여 window.innerHeight 사용.
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const gameW = 800;
+    const gameH = 600;
+    
+    // 화면에 꽉 차게 하되 비율 유지
+    // 약간의 여백을 두어(0.95) 경계선이 잘리는 느낌 방지 및 UI 터치 오류 방지
+    const scale = Math.min(w / gameW, h / gameH) * 0.95; 
+    
+    if (scaler) {
+        scaler.style.transform = `scale(${scale})`;
+    }
+}
+
+// 리사이즈 이벤트 리스너 등록
+window.addEventListener('resize', handleResize);
+
+// 초기 실행 시 리사이징 적용
+handleResize();
+createTitleUI();
+
+// Start the loop
 loop();
 
 </script>
