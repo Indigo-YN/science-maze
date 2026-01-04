@@ -1,0 +1,2352 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SCIENCE MAZE: 물질의 성질</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&family=Do+Hyeon&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #111;
+            overflow: hidden;
+            font-family: 'Do Hyeon', sans-serif;
+            color: white;
+            user-select: none;
+            touch-action: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #000;
+            overflow: hidden;
+        }
+
+        #game-scaler {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            transform-origin: center center;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+        }
+
+        canvas {
+            image-rendering: pixelated;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+            background-color: #000;
+            width: 100%;
+            height: 100%;
+            display: block; 
+        }
+
+        /* 팝업 스타일 */
+        .popup {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.9);
+            border: 6px solid white;
+            padding: 50px;
+            text-align: center;
+            display: none;
+            z-index: 200;
+            min-width: 650px;
+            box-shadow: 0 0 0 1000px rgba(0,0,0,0.7);
+            color: white; 
+            animation: fadeIn 0.3s ease-out; 
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -60%); }
+            to { opacity: 1; transform: translate(-50%, -50%); }
+        }
+
+        .popup.show {
+            display: block;
+        }
+
+        .popup h2 {
+            margin-top: 0;
+            font-size: 4.5rem;
+            margin-bottom: 20px;
+        }
+
+        .popup p, .popup .desc-text {
+            font-size: 2.2rem;
+            margin: 25px 0;
+            line-height: 1.5;
+            word-break: keep-all;
+        }
+
+        .result-highlight {
+            font-size: 5.5rem;
+            font-weight: bold;
+            margin: 20px 0;
+            text-shadow: 2px 2px 0px #000;
+        }
+
+        #quiz-timer {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 3rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .btn {
+            position: relative;
+            background: black;
+            color: white;
+            border: 3px solid white;
+            padding: 20px 40px;
+            font-family: 'Do Hyeon', sans-serif;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: transform 0.1s, background-color 0.2s;
+            margin: 15px;
+            overflow: visible;
+            box-sizing: border-box; 
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            background: white;
+            color: black;
+            border-color: yellow;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .ripple-effect::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border: 3px solid yellow;
+            border-radius: inherit;
+            opacity: 0;
+            animation: rippleAnim 0.5s ease-out forwards;
+            pointer-events: none;
+            box-sizing: border-box;
+        }
+
+        @keyframes rippleAnim {
+            0% {
+                top: -2px; left: -2px; right: -2px; bottom: -2px;
+                opacity: 1;
+                border-color: yellow;
+            }
+            100% {
+                top: -15px; left: -15px; right: -15px; bottom: -15px;
+                opacity: 0;
+                border-color: rgba(255, 255, 255, 0);
+            }
+        }
+
+        #quiz-popup {
+            min-width: 600px;
+            padding: 40px;
+        }
+
+        #quiz-popup h2 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+
+        #quiz-popup p {
+            font-size: 1.8rem;
+            margin: 25px 0;
+        }
+
+        .quiz-option {
+            display: block;
+            width: 100%;
+            margin: 12px 0;
+            text-align: left;
+            font-size: 1.5rem !important;
+            padding: 15px 30px !important;
+        }
+
+        #msg-popup {
+            min-width: 600px;
+            padding: 40px;
+        }
+
+        #msg-popup h2 {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+        }
+
+        #msg-popup .desc-text {
+            font-size: 1.8rem;
+            margin: 20px 0;
+            line-height: 1.4;
+        }
+
+        #msg-popup .result-highlight {
+            font-size: 4rem;
+            font-weight: bold;
+            margin: 15px 0;
+            text-shadow: 2px 2px 0px #000;
+        }
+
+        #pause-menu {
+            z-index: 210;
+        }
+
+        #transition-overlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: black;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 300;
+            transition: opacity 0.5s;
+        }
+
+        .heart-anim-box {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .pixel-heart {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            grid-template-rows: repeat(6, 1fr);
+            width: 120px;
+            height: 108px;
+            gap: 2px;
+        }
+        
+        .pixel {
+            background-color: red;
+            width: 100%;
+            height: 100%;
+            transition: background-color 0.2s; 
+        }
+        
+        .p-hide { opacity: 0; visibility: hidden; }
+
+        .heart-cracking .pixel {
+            background-color: white !important; 
+        }
+        
+        .heart-cracking {
+            animation: crackShake 0.8s forwards; 
+        }
+
+        @keyframes crackShake {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            10% { transform: translate(-8px, -8px) rotate(-10deg); }
+            20% { transform: translate(8px, 8px) rotate(10deg); }
+            30% { transform: translate(-8px, 8px) rotate(-10deg); filter: brightness(2) grayscale(100%); } 
+            40% { transform: translate(8px, -8px) rotate(10deg); }
+            50% { transform: translate(-5px, 0) rotate(-5deg); opacity: 1; }
+            60% { transform: scale(1.2); filter: brightness(5); } 
+            80% { transform: scale(1.3) rotate(5deg); opacity: 0.8; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+
+        .dom-particle {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: white;
+            pointer-events: none;
+            box-shadow: 0 0 5px white; 
+        }
+        
+        .heart-bit {
+            position: absolute;
+            width: 16px; 
+            height: 16px;
+            background-color: white;
+            pointer-events: none;
+            z-index: 250;
+        }
+
+        /* 모바일 컨트롤러 - 좌측 하단 배치 */
+        #mobile-controls {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            display: none;
+            grid-template-columns: repeat(3, 80px);
+            grid-template-rows: repeat(2, 80px);
+            gap: 10px;
+            z-index: 50;
+            transition: opacity 0.1s; 
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid white;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 32px;
+            color: white;
+            user-select: none;
+            cursor: pointer;
+        }
+        .control-btn:active { background: rgba(255, 255, 255, 0.5); }
+        #btn-up { grid-column: 2; grid-row: 1; }
+        #btn-left { grid-column: 1; grid-row: 2; }
+        #btn-down { grid-column: 2; grid-row: 2; }
+        #btn-right { grid-column: 3; grid-row: 2; }
+
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="game-scaler">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="transition-overlay"></div>
+
+        <div id="pause-menu" class="popup">
+            <h2>PAUSED</h2>
+            <p>다시 시작하려면 아래 버튼을 누르세요</p>
+            <button class="btn" onclick="resumeGameWithEffect(this)">계속하기</button>
+            <button class="btn" onclick="returnToTitleWithEffect(this)">타이틀로</button>
+        </div>
+
+        <div id="quiz-popup" class="popup">
+            <div id="quiz-timer">10</div>
+            <h2 id="quiz-topic" style="color: #0ff;">QUESTION</h2>
+            <p id="quiz-question">문제 내용</p>
+            <div id="quiz-options"></div>
+        </div>
+
+        <div id="msg-popup" class="popup">
+            <h2 id="msg-title">제목</h2>
+            <div id="heart-anim-container" class="heart-anim-box" style="display:none;">
+                <div id="pixel-heart" class="pixel-heart">
+                    <div class="pixel p-hide"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel p-hide"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel p-hide"></div>
+                    <div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div>
+                    <div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div>
+                    <div class="pixel p-hide"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel p-hide"></div>
+                    <div class="pixel p-hide"></div><div class="pixel p-hide"></div><div class="pixel p-hide"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel p-hide"></div><div class="pixel p-hide"></div>
+                    <div class="pixel p-hide"></div><div class="pixel p-hide"></div><div class="pixel p-hide"></div><div class="pixel"></div><div class="pixel p-hide"></div><div class="pixel p-hide"></div><div class="pixel p-hide"></div>
+                </div>
+            </div>
+            <div id="msg-content" class="desc-text">내용</div>
+            <div id="msg-btn-container"></div>
+        </div>
+
+        <div id="mobile-controls">
+            <div id="btn-up" class="control-btn">▲</div>
+            <div id="btn-left" class="control-btn">◀</div>
+            <div id="btn-down" class="control-btn">▼</div>
+            <div id="btn-right" class="control-btn">▶</div>
+        </div>
+    </div>
+</div>
+
+<script>
+const CANVAS_WIDTH = 800;
+const CANVAS_HEIGHT = 600;
+const TILE_SIZE = 40;
+const PLAYER_SIZE = 24;
+const GHOST_SIZE = 24;
+const INTERACT_DIST = 40; 
+
+// Map centering offsets
+const MAP_OFFSET_X = (CANVAS_WIDTH - (19 * TILE_SIZE)) / 2; // 20
+const MAP_OFFSET_Y = (CANVAS_HEIGHT - (13 * TILE_SIZE)) / 2; // 40
+
+const COLORS = {
+    bg: '#000000',
+    wall: '#333333',
+    player: '#00FF00',
+    playerEyes: '#FFFFFF',
+    ghost: '#FF0000',
+    ghostEyes: '#FFFFFF',
+    door: '#FFFF00',
+    portal: '#00FFFF',
+    uiText: '#FFFFFF',
+    uiHeart: '#FF0000',
+    btnBorder: '#FFFFFF',
+    btnHover: '#FFFF00',
+    themes: [
+        { name: '순물질과 혼합물', bg: '#1a1a2e', wall: '#16213e' },
+        { name: '밀도', bg: '#1b1b1b', wall: '#2d4059' },
+        { name: '용해도', bg: '#222831', wall: '#393e46' },
+        { name: '녹는점/끓는점', bg: '#2c0000', wall: '#5c0000' },
+        { name: '크로마토그래피', bg: '#0f0f0f', wall: '#4b4b4b' }
+    ]
+};
+
+const STATE = {
+    TITLE: 0,
+    PLAYING: 1,
+    QUIZ: 2,
+    PAUSED: 3,
+    GAMEOVER: 4,
+    CLEAR: 5,
+    WAITING: 6,
+    COUNTDOWN: 7
+};
+
+// 중학교 2학년 과학 '물질의 성질' 교과서 내용 반영 (엄격히 교과과정 준수)
+const QUESTIONS_DB = {
+    '순물질과 혼합물': [
+        { q: "한 가지 물질로만 이루어진 물질은?", options: ["순물질", "혼합물", "화합물", "용액"], a: 0 },
+        { q: "두 가지 이상의 순물질이 성질을 잃지 않고 섞여 있는 것은?", options: ["원소", "화합물", "순물질", "혼합물"], a: 3 },
+        { q: "다음 중 순물질에 해당하는 것은?", options: ["공기", "바닷물", "금", "암석"], a: 2 },
+        { q: "다음 중 순물질인 것은?", options: ["증류수", "우유", "오렌지 주스", "간장"], a: 0 },
+        { q: "다음 중 혼합물에 해당하는 것은?", options: ["구리", "에탄올", "소금물", "산소"], a: 2 },
+        { q: "균일 혼합물에 대한 예시로 옳은 것은?", options: ["흙탕물", "설탕물", "우유", "과일 샐러드"], a: 1 },
+        { q: "불균일 혼합물에 대한 예시로 옳은 것은?", options: ["공기", "식초", "흙탕물", "탄산음료"], a: 2 },
+        { q: "순물질은 가열 곡선에서 어떤 특징이 있나?", options: ["온도가 계속 변한다", "온도가 일정하게 유지되는 구간이 있다", "끓는점이 여러 개다", "어는점이 없다"], a: 1 },
+        { q: "고체 혼합물(납+주석)의 녹는점은 순물질보다?", options: ["높다", "낮다", "같다", "알 수 없다"], a: 1 },
+        { q: "소금물(혼합물)이 끓을 때의 특징은?", options: ["100°C에서 일정하다", "100°C보다 낮은 온도에서 끓는다", "끓는 동안 온도가 계속 올라간다", "끓지 않는다"], a: 2 },
+        { q: "순수한 물이 어는 동안 온도는?", options: ["계속 내려간다", "일정하게 유지된다", "오르락내리락한다", "계속 올라간다"], a: 1 },
+        { q: "물에 소금을 넣으면 어는점은?", options: ["높아진다", "낮아진다", "변하지 않는다", "0°C가 된다"], a: 1 },
+        { q: "물질의 특성이 아닌 것은?", options: ["밀도", "용해도", "끓는점", "질량"], a: 3 },
+        { q: "물질의 양에 관계없이 일정한 값을 가지는 성질은?", options: ["부피", "질량", "무게", "물질의 특성"], a: 3 }
+    ],
+    '녹는점/끓는점': [
+        { q: "액체가 끓어 기체로 변하는 동안 일정하게 유지되는 온도는?", options: ["녹는점", "어는점", "끓는점", "밀도"], a: 2 },
+        { q: "고체가 녹아 액체로 변하는 동안 일정하게 유지되는 온도는?", options: ["녹는점", "끓는점", "어는점", "용해도"], a: 0 },
+        { q: "같은 물질일 때 녹는점과 어는점의 관계는?", options: ["같다", "녹는점이 더 높다", "어는점이 더 높다", "관계없다"], a: 0 },
+        { q: "끓는점은 물질의 종류에 따라?", options: ["같다", "다르다", "비례한다", "반비례한다"], a: 1 },
+        { q: "질량이 2배가 되면 순물질의 끓는점은?", options: ["2배가 된다", "1/2배가 된다", "변하지 않는다", "4배가 된다"], a: 2 },
+        { q: "압력이 높아지면 액체의 끓는점은?", options: ["높아진다", "낮아진다", "변하지 않는다", "0이 된다"], a: 0 },
+        { q: "높은 산에서 밥을 지으면 쌀이 설익는 이유는?", options: ["기압이 낮아 끓는점이 낮아져서", "기압이 높아 끓는점이 높아져서", "온도가 낮아서", "산소가 부족해서"], a: 0 },
+        { q: "물(100°C)과 에탄올(78°C) 혼합물을 가열할 때 먼저 끓어 나오는 물질은?", options: ["물", "에탄올", "동시에 나온다", "알 수 없다"], a: 1 },
+        { q: "끓는점 차이를 이용하여 액체 혼합물을 분리하는 방법은?", options: ["거름", "분별 깔때기법", "증류", "재결정"], a: 2 },
+        { q: "원유를 분리할 때 사용하는 장치는?", options: ["증류탑", "거름종이", "스포이트", "현미경"], a: 0 },
+        { q: "원유의 분별 증류 시 가장 위쪽에서 나오는 물질은?", options: ["끓는점이 가장 낮은 물질", "끓는점이 가장 높은 물질", "밀도가 가장 큰 물질", "고체 물질"], a: 0 },
+        { q: "뷰테인과 프로페인의 혼합물을 분리할 때 이용하는 성질은?", options: ["밀도", "용해도", "끓는점", "녹는점"], a: 2 },
+        { q: "소주 고리를 이용한 혼합물의 분리 원리는?", options: ["밀도 차", "용해도 차", "끓는점 차", "크기 차"], a: 2 }
+    ],
+    '밀도': [
+        { q: "밀도를 구하는 공식은?", options: ["부피/질량", "질량/부피", "질량×부피", "부피-질량"], a: 1 },
+        { q: "밀도의 단위로 알맞은 것은?", options: ["g", "mL", "g/mL", "cm"], a: 2 },
+        { q: "물질이 물에 뜨는 이유는 물보다 밀도가?", options: ["크기 때문", "작기 때문", "같기 때문", "질량이 작기 때문"], a: 1 },
+        { q: "같은 질량일 때 부피가 클수록 밀도는?", options: ["작아진다", "커진다", "변함없다", "알 수 없다"], a: 0 },
+        { q: "기체의 밀도는 온도가 올라가면?", options: ["증가한다", "감소한다", "변함없다", "폭발한다"], a: 1 },
+        { q: "기체의 밀도는 압력이 커지면?", options: ["증가한다", "감소한다", "변함없다", "사라진다"], a: 0 },
+        { q: "물(밀도 1.0)과 식용유(밀도 0.9)를 분별 깔때기에 넣으면 위층은?", options: ["물", "식용유", "섞여서 층이 없다", "공기"], a: 1 },
+        { q: "밀도 차이를 이용해 분리할 수 있는 고체 혼합물은?", options: ["소금과 설탕", "모래와 스타이로폼", "물과 에탄올", "사인펜 잉크"], a: 1 },
+        { q: "신선한 달걀을 고르기 위해 소금물에 넣는 것은 어떤 성질 이용?", options: ["용해도", "밀도", "끓는점", "녹는점"], a: 1 },
+        { q: "바다에 유출된 기름을 제거하는 오일 펜스의 원리는?", options: ["기름이 물보다 밀도가 작아서", "기름이 물보다 밀도가 커서", "기름이 물에 잘 녹아서", "기름이 끓는점이 낮아서"], a: 0 },
+        { q: "혈액을 원심 분리기로 분리할 때 아래쪽에 가라앉는 것은?", options: ["밀도가 작은 혈장", "밀도가 큰 혈구", "밀도가 같은 물질", "물"], a: 1 },
+        { q: "헬륨 풍선이 위로 뜨는 이유는?", options: ["공기보다 밀도가 작아서", "공기보다 밀도가 커서", "풍선이 가벼워서", "바람이 불어서"], a: 0 },
+        { q: "액체 혼합물을 분별 깔때기로 분리할 때 꼭 필요한 조건은?", options: ["끓는점이 달라야 한다", "서로 섞이지 않고 밀도가 달라야 한다", "색깔이 달라야 한다", "어는점이 같아야 한다"], a: 1 }
+    ],
+    '용해도': [
+        { q: "일정한 온도에서 용매 100g에 최대로 녹을 수 있는 용질의 g수는?", options: ["농도", "밀도", "용해도", "포화도"], a: 2 },
+        { q: "용해도가 50인 물질을 물 100g에 30g 녹이면 이 용액은?", options: ["포화 용액", "불포화 용액", "과포화 용액", "혼합물 아님"], a: 1 },
+        { q: "대부분의 고체 물질은 온도가 높을수록 용해도가?", options: ["증가한다", "감소한다", "일정하다", "없어진다"], a: 0 },
+        { q: "기체의 용해도는 온도가 높을수록?", options: ["증가한다", "감소한다", "변화 없다", "처음엔 증가하다 감소한다"], a: 1 },
+        { q: "기체의 용해도는 압력이 높을수록?", options: ["증가한다", "감소한다", "변화 없다", "알 수 없다"], a: 0 },
+        { q: "탄산음료를 차갑게 보관하는 이유는?", options: ["기체의 용해도를 높이기 위해", "기체의 용해도를 낮추기 위해", "맛을 없애기 위해", "색을 변하게 하기 위해"], a: 0 },
+        { q: "온도에 따른 용해도 차이를 이용하여 순수한 고체를 얻는 방법은?", options: ["증류", "분별 깔때기법", "재결정", "크로마토그래피"], a: 2 },
+        { q: "질산칼륨과 염화나트륨 혼합물을 분리할 때 가장 적절한 방법은?", options: ["밀도 차 분리", "끓는점 차 분리", "재결정", "거름"], a: 2 },
+        { q: "포화 용액의 온도를 낮출 때 생기는 고체의 양을 구하려면?", options: ["처음 녹인 양 - 나중 온도에서의 용해도", "나중 용해도 - 처음 용해도", "용매의 질량 + 용질의 질량", "밀도 × 부피"], a: 0 },
+        { q: "천일염에서 깨끗한 소금을 얻는 과정에 이용되는 원리는?", options: ["재결정", "증류", "밀도 차", "크로마토그래피"], a: 0 },
+        { q: "여름철 물고기들이 수면 위로 입을 내미는 이유는?", options: ["먹이를 찾으려고", "수온이 높아 산소 용해도가 감소해서", "수압이 낮아져서", "빛을 보려고"], a: 1 }
+    ],
+    '크로마토그래피': [
+        { q: "혼합물을 이루는 성분 물질이 용매를 따라 이동하는 속도 차이를 이용한 분리법은?", options: ["증류", "재결정", "밀도차 분리", "크로마토그래피"], a: 3 },
+        { q: "크로마토그래피의 장점이 아닌 것은?", options: ["매우 적은 양도 분리 가능", "성질이 비슷한 물질도 분리 가능", "분리 과정이 복잡하고 오래 걸림", "한 번에 여러 성분 분리 가능"], a: 2 },
+        { q: "사인펜 잉크의 색소를 분리할 때 거름종이 끝이 물에 닿아야 하는가?", options: ["잉크 점이 물에 잠기게", "잉크 점이 물에 잠기지 않게", "상관없다", "거름종이 전체를 담근다"], a: 1 },
+        { q: "크로마토그래피에서 가장 멀리 이동한 성분은?", options: ["용매와의 인력이 가장 큰 물질", "거름종이와의 인력이 가장 큰 물질", "가장 무거운 물질", "가장 진한 색 물질"], a: 0 },
+        { q: "운동선수의 도핑 테스트에 이용되는 분리 방법은?", options: ["증류", "재결정", "크로마토그래피", "밀도차 분리"], a: 2 },
+        { q: "식물의 엽록소(색소)를 분리할 때 사용하는 방법은?", options: ["크로마토그래피", "증류", "거름", "추출"], a: 0 },
+        { q: "크로마토그래피 실험에서 뚜껑을 덮는 이유는?", options: ["용매의 증발을 막기 위해", "공기를 차단하기 위해", "온도를 높이기 위해", "압력을 낮추기 위해"], a: 0 }
+    ]
+};
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = CANVAS_WIDTH;
+canvas.height = CANVAS_HEIGHT;
+
+let gameState = STATE.TITLE;
+let gameMode = ''; 
+let controlType = 'PC'; 
+
+let stage = 1;
+let score = 0;
+let hearts = 5;
+let startTime = 0;
+let totalPlayTime = 0;
+let stageTheme = {};
+let maze = [];
+let player = { x: 0, y: 0, dx: 0, dy: 0, dir: 'down', active: true };
+let ghosts = []; 
+let baseGhostSpeed = 3.5; 
+let speedIncreaseCount = 0; 
+
+let questionsInStage = []; 
+let portal = { x: 0, y: 0, open: false };
+let hazards = [];
+let teleporters = [];
+
+let stageCleared = false;
+let ghostTimer = null;
+let respawnTimer = null;
+let messageTimer = null; 
+let warningMessage = "";
+
+// Countdown Variables
+let countdownStart = 0;
+let countdownLabel = "";
+let countdownAlpha = 1.0;
+
+// Ghost Spawn Timer (Endless Mode)
+let ghostSpawnTimer = 0; 
+
+// Pause tracking
+let pauseStartTime = 0;
+
+// Skill System
+let skillActive = false;
+let skillTimeLeft = 0;
+let skillCooldownLeft = 0;
+let skillTotalDuration = 5000;
+const SKILL_COOLDOWN_TIME = 30000;
+let playerTrail = []; 
+
+let quizInterval = null;
+let quizTimeLeft = 0;
+
+let particles = [];
+
+let transition = { active: false, alpha: 0, state: 'NONE', callback: null };
+
+let timeAttackOrder = [];
+const keys = {};
+
+function initGame() {
+    stage = 1;
+    score = 0;
+    hearts = 5;
+    totalPlayTime = 0;
+    player.active = true;
+    baseGhostSpeed = 3.5; 
+    speedIncreaseCount = 0;
+    
+    // Skill Init
+    skillActive = false;
+    skillTimeLeft = 0;
+    skillCooldownLeft = 0;
+    playerTrail = [];
+    
+    if (gameMode === 'TIME_ATTACK') {
+        const topics = Object.keys(QUESTIONS_DB);
+        timeAttackOrder = topics.sort(() => Math.random() - 0.5).slice(0, 5);
+    }
+    
+    startStage();
+    
+    gameState = STATE.COUNTDOWN;
+    countdownStart = Date.now();
+    warningMessage = "";
+}
+
+function startStage() {
+    hazards = [];
+    teleporters = [];
+    
+    // 점유된 그리드 좌표를 추적하는 Set (형식: "col,row")
+    const occupied = new Set();
+    // 헬퍼 함수: 점유 확인 및 등록
+    const markOccupied = (c, r) => occupied.add(`${c},${r}`);
+    const isOccupied = (c, r) => occupied.has(`${c},${r}`);
+
+    // 플레이어 시작 위치 (1, 1) 점유
+    markOccupied(1, 1);
+    
+    if (gameMode === 'TIME_ATTACK') {
+        const topic = timeAttackOrder[stage - 1];
+        const themeData = COLORS.themes.find(t => t.name.includes(topic.split('/')[0])) || COLORS.themes[0];
+        stageTheme = { ...themeData, topic: topic };
+    } else {
+        const randTheme = COLORS.themes[Math.floor(Math.random() * COLORS.themes.length)];
+        stageTheme = { ...randTheme, topic: '랜덤 퀴즈' };
+        
+        if (stage > 1 && (stage - 1) % 2 === 0) {
+            baseGhostSpeed = Math.min(4.5, baseGhostSpeed + 0.1);
+        }
+    }
+
+    const cols = 19; 
+    const rows = 13;
+    maze = Array.from({ length: rows }, () => Array(cols).fill(1)); 
+
+    const stack = [];
+    const startX = 1;
+    const startY = 1;
+    maze[startY][startX] = 0;
+    stack.push({ x: startX, y: startY });
+
+    const directions = [[0, -2], [0, 2], [-2, 0], [2, 0]];
+
+    while (stack.length > 0) {
+        const current = stack[stack.length - 1];
+        const neighbors = [];
+
+        directions.forEach(dir => {
+            const nx = current.x + dir[0];
+            const ny = current.y + dir[1];
+            if (nx > 0 && nx < cols - 1 && ny > 0 && ny < rows - 1 && maze[ny][nx] === 1) {
+                neighbors.push({ x: nx, y: ny, dx: dir[0] / 2, dy: dir[1] / 2 });
+            }
+        });
+
+        if (neighbors.length > 0) {
+            const next = neighbors[Math.floor(Math.random() * neighbors.length)];
+            maze[next.y][next.x] = 0;
+            maze[current.y + next.dy][current.x + next.dx] = 0; 
+            stack.push({ x: next.x, y: next.y });
+        } else {
+            stack.pop();
+        }
+    }
+
+    if (gameMode === 'ENDLESS') {
+        let deadEndsFound = true;
+        while(deadEndsFound) {
+            deadEndsFound = false;
+            let cells = [];
+            for(let r=1; r<rows-1; r++) {
+                for(let c=1; c<cols-1; c++) {
+                    if(maze[r][c] === 0) cells.push({r,c});
+                }
+            }
+            cells.sort(() => Math.random() - 0.5);
+
+            for(let cell of cells) {
+                const r = cell.r;
+                const c = cell.c;
+                
+                let walls = 0;
+                if(maze[r-1][c] === 1) walls++;
+                if(maze[r+1][c] === 1) walls++;
+                if(maze[r][c-1] === 1) walls++;
+                if(maze[r][c+1] === 1) walls++;
+                
+                if(walls >= 3) {
+                    deadEndsFound = true;
+                    const neighbors = [];
+                    if(r>1 && maze[r-1][c] === 1) neighbors.push({r:r-1, c:c});
+                    if(r<rows-2 && maze[r+1][c] === 1) neighbors.push({r:r+1, c:c});
+                    if(c>1 && maze[r][c-1] === 1) neighbors.push({r:r, c:c-1});
+                    if(c<cols-2 && maze[r][c+1] === 1) neighbors.push({r:r, c:c+1});
+                    
+                    if(neighbors.length > 0) {
+                        const n = neighbors[Math.floor(Math.random() * neighbors.length)];
+                        maze[n.r][n.c] = 0;
+                    }
+                }
+            }
+        }
+    }
+
+    // Apply offset for centered map
+    player.x = TILE_SIZE * 1.5 + MAP_OFFSET_X;
+    player.y = TILE_SIZE * 1.5 + MAP_OFFSET_Y;
+    player.active = true;
+
+    // 1. 탈출구(Portal) 배치
+    let farDist = 0;
+    let portalC = 0, portalR = 0;
+    
+    for(let r=1; r<rows; r++) {
+        for(let c=1; c<cols; c++) {
+            if (maze[r][c] === 0) {
+                const dist = Math.abs(1 - c) + Math.abs(1 - r);
+                if (dist > farDist) {
+                    farDist = dist;
+                    portalC = c;
+                    portalR = r;
+                }
+            }
+        }
+    }
+    portal.x = portalC * TILE_SIZE + TILE_SIZE/2 + MAP_OFFSET_X;
+    portal.y = portalR * TILE_SIZE + TILE_SIZE/2 + MAP_OFFSET_Y;
+    portal.open = false;
+    markOccupied(portalC, portalR); // 탈출구 위치 점유
+
+    // 2. 문제(Question) 배치
+    questionsInStage = [];
+    let placed = 0;
+    let attempts = 0;
+    while(placed < 3 && attempts < 1000) {
+        attempts++;
+        const rx = Math.floor(Math.random() * (cols - 2)) + 1;
+        const ry = Math.floor(Math.random() * (rows - 2)) + 1;
+        
+        // 빈 길이고, 점유되지 않았는지 확인
+        if (maze[ry][rx] === 0 && !isOccupied(rx, ry)) {
+            const px = rx * TILE_SIZE + TILE_SIZE/2 + MAP_OFFSET_X;
+            const py = ry * TILE_SIZE + TILE_SIZE/2 + MAP_OFFSET_Y;
+            const distP = Math.hypot(px - player.x, py - player.y);
+            
+            // 플레이어와 일정 거리 이상
+            if (distP > 100) {
+                let qData;
+                if (gameMode === 'TIME_ATTACK') {
+                    qData = QUESTIONS_DB[stageTheme.topic][placed % QUESTIONS_DB[stageTheme.topic].length];
+                } else {
+                    const allTopics = Object.keys(QUESTIONS_DB);
+                    const rTopic = allTopics[Math.floor(Math.random() * allTopics.length)];
+                    const qList = QUESTIONS_DB[rTopic];
+                    qData = qList[Math.floor(Math.random() * qList.length)];
+                }
+
+                questionsInStage.push({
+                    x: px, y: py,
+                    solved: false,
+                    data: qData,
+                    disabledUntil: 0 
+                });
+                markOccupied(rx, ry); // 문제 위치 점유
+                placed++;
+            }
+        }
+    }
+
+    if (gameMode === 'ENDLESS') {
+        // 3. 장애물(Hazard) 배치
+        let hazardCount = 0;
+        if (stage >= 7) {
+            hazardCount = 1 + Math.floor((stage - 7) / 5);
+        }
+        hazardCount = Math.min(5, hazardCount);
+
+        for(let i=0; i<hazardCount; i++) {
+            let placedHaz = false;
+            let hAttempts = 0;
+            while(!placedHaz && hAttempts < 200) {
+                hAttempts++;
+                const rx = Math.floor(Math.random() * (cols - 2)) + 1;
+                const ry = Math.floor(Math.random() * (rows - 2)) + 1;
+                if(maze[ry][rx] === 0 && !isOccupied(rx, ry)) {
+                    const x = rx * TILE_SIZE + TILE_SIZE/2 + MAP_OFFSET_X;
+                    const y = ry * TILE_SIZE + TILE_SIZE/2 + MAP_OFFSET_Y;
+                    if(Math.hypot(x - player.x, y - player.y) > 150) {
+                        hazards.push({x, y, active: false, offset: Math.random() * 5000});
+                        markOccupied(rx, ry);
+                        placedHaz = true;
+                    }
+                }
+            }
+        }
+
+        // 4. 텔레포터(Teleporter) 배치
+        if (stage >= 8) {
+            addTeleporterPair('blue', 'pentagon', 0, occupied);
+        }
+        if (stage >= 13) {
+            addTeleporterPair('#800080', 'hexagon', 1, occupied);
+        }
+        if (stage >= 18) {
+            addTeleporterPair('orange', 'star', 2, occupied);
+        }
+
+        const ghostCount = 1 + Math.floor((stage - 1) / 4);
+        ghosts = [];
+        for (let i = 0; i < ghostCount; i++) {
+            ghosts.push({
+                x: TILE_SIZE * 1.5 + MAP_OFFSET_X,
+                y: TILE_SIZE * 1.5 + MAP_OFFSET_Y,
+                active: false,
+                speed: baseGhostSpeed,
+                spawnDelay: i * 500
+            });
+        }
+        ghostSpawnTimer = 3000;
+        warningMessage = "3초 뒤 유령이 쫓아옵니다!";
+    } else {
+        ghosts = [];
+        ghostSpawnTimer = 0;
+    }
+    
+    particles = [];
+    gameState = STATE.PLAYING;
+}
+
+function addTeleporterPair(color, shape, idOffset, occupiedSet) {
+    let pair = [];
+    let attempts = 0;
+    const cols = maze[0].length;
+    const rows = maze.length;
+    
+    // occupiedSet 헬퍼
+    const isOcc = (c, r) => occupiedSet.has(`${c},${r}`);
+    const markOcc = (c, r) => occupiedSet.add(`${c},${r}`);
+
+    while(pair.length < 2 && attempts < 100) {
+        attempts++;
+        const rx = Math.floor(Math.random() * (cols - 2)) + 1;
+        const ry = Math.floor(Math.random() * (rows - 2)) + 1;
+        
+        // 겹침 검사 강화: Maze 길 && occupiedSet 미포함 && 현재 쌍 내 중복 아님
+        if(maze[ry][rx] === 0 && !isOcc(rx, ry)) {
+            // 현재 생성 중인 쌍 내 중복 체크
+            if (!pair.some(p => p.c === rx && p.r === ry)) {
+                 const x = rx * TILE_SIZE + TILE_SIZE/2 + MAP_OFFSET_X;
+                 const y = ry * TILE_SIZE + TILE_SIZE/2 + MAP_OFFSET_Y;
+                 
+                 // 플레이어 안전 거리
+                 if(Math.hypot(x - player.x, y - player.y) > 100) {
+                    pair.push({x, y, c: rx, r: ry});
+                 }
+            }
+        }
+    }
+    
+    if(pair.length === 2) {
+        // 확정된 위치 점유 표시
+        markOcc(pair[0].c, pair[0].r);
+        markOcc(pair[1].c, pair[1].r);
+
+        const idx1 = teleporters.length;
+        const idx2 = teleporters.length + 1;
+        teleporters.push({x: pair[0].x, y: pair[0].y, id: idOffset, linkIdx: idx2, color: color, shape: shape, cooldown: 0});
+        teleporters.push({x: pair[1].x, y: pair[1].y, id: idOffset, linkIdx: idx1, color: color, shape: shape, cooldown: 0});
+    }
+}
+
+function startGameReal() {
+    gameState = STATE.PLAYING;
+    startTime = Date.now();
+}
+
+function spawnGhosts() {
+    if (gameState !== STATE.PLAYING && gameState !== STATE.QUIZ && gameState !== STATE.WAITING) return;
+    
+    const now = Date.now();
+    ghosts.forEach(g => {
+        // Reset Position with Offset
+        g.x = TILE_SIZE * 1.5 + MAP_OFFSET_X;
+        g.y = TILE_SIZE * 1.5 + MAP_OFFSET_Y;
+        g.spawnTime = now + g.spawnDelay; 
+        g.active = true; 
+        
+        if (g.spawnDelay <= 0) {
+            g.isSpawning = false;
+        } else {
+            g.isSpawning = true;
+        }
+    });
+}
+
+function getNextMove(gx, gy, px, py) {
+    const startC = Math.floor((gx - MAP_OFFSET_X) / TILE_SIZE);
+    const startR = Math.floor((gy - MAP_OFFSET_Y) / TILE_SIZE);
+    const endC = Math.floor((px - MAP_OFFSET_X) / TILE_SIZE);
+    const endR = Math.floor((py - MAP_OFFSET_Y) / TILE_SIZE);
+
+    if (startC === endC && startR === endR) return null;
+
+    const queue = [{c: startC, r: startR, path: []}];
+    const visited = new Set();
+    visited.add(`${startC},${startR}`);
+
+    const dirs = [[0, -1], [0, 1], [-1, 0], [1, 0]]; 
+
+    let maxDepth = 200; 
+    let depth = 0;
+
+    while(queue.length > 0 && depth < maxDepth) {
+        const curr = queue.shift();
+        
+        if (curr.c === endC && curr.r === endR) {
+            return curr.path[0]; 
+        }
+
+        for (let d of dirs) {
+            const nc = curr.c + d[0];
+            const nr = curr.r + d[1];
+            
+            if (nr >= 0 && nr < maze.length && nc >= 0 && nc < maze[0].length && 
+                maze[nr][nc] === 0 && !visited.has(`${nc},${nr}`)) {
+                visited.add(`${nc},${nr}`);
+                const newPath = [...curr.path, {c: nc, r: nr}];
+                queue.push({c: nc, r: nr, path: newPath});
+            }
+        }
+        depth++;
+    }
+    return null; 
+}
+
+function update() {
+    updateTransition();
+    if (transition.active && transition.state === 'OUT') {
+        const mob = document.getElementById('mobile-controls');
+        if(mob) mob.style.opacity = 1 - transition.alpha;
+        return; 
+    } else if (transition.active && transition.state === 'IN') {
+        const mob = document.getElementById('mobile-controls');
+        if(mob) mob.style.opacity = 1 - transition.alpha;
+    }
+
+    if (gameState === STATE.COUNTDOWN) {
+        const diff = Date.now() - countdownStart;
+        if (diff < 1000) {
+            countdownLabel = "3";
+            countdownAlpha = 1 - (diff / 1000);
+        } else if (diff < 2000) {
+            countdownLabel = "2";
+            countdownAlpha = 1 - ((diff - 1000) / 1000);
+        } else if (diff < 3000) {
+            countdownLabel = "1";
+            countdownAlpha = 1 - ((diff - 2000) / 1000);
+        } else {
+            startGameReal();
+        }
+        if (gameState === STATE.COUNTDOWN) return;
+    }
+
+    if (gameState !== STATE.PLAYING) return;
+
+    if (gameMode === 'ENDLESS' && ghostSpawnTimer > 0) {
+        ghostSpawnTimer -= 16.6; 
+        
+        let sec = Math.ceil(ghostSpawnTimer / 1000);
+        if (ghostSpawnTimer <= 0) {
+            ghostSpawnTimer = 0;
+            warningMessage = "";
+            spawnGhosts();
+        } else {
+            warningMessage = `${sec}초 뒤 유령이 쫓아옵니다!`;
+        }
+    }
+
+    // Skill Logic Calculation
+    let extraTime = 0;
+    if (stage >= 5) {
+        extraTime = Math.floor((stage - 5) / 5) * 2000;
+    }
+    skillTotalDuration = Math.min(15000, 5000 + extraTime);
+
+    if (skillActive) {
+        skillTimeLeft -= 16.6; // approx 60fps
+        if (skillTimeLeft <= 0) {
+            skillActive = false;
+            skillTimeLeft = 0;
+            skillCooldownLeft = SKILL_COOLDOWN_TIME;
+        }
+    } else if (skillCooldownLeft > 0) {
+        // Stop cooldown recovery if all questions solved
+        const allSolved = questionsInStage.length > 0 && questionsInStage.every(q => q.solved);
+        if (!allSolved) {
+            skillCooldownLeft -= 16.6;
+            if (skillCooldownLeft < 0) skillCooldownLeft = 0;
+        }
+    }
+
+    if (player.active) {
+        let nextX = player.x;
+        let nextY = player.y;
+        
+        const speed = skillActive ? 5.5 : 4;
+
+        if (keys['ArrowUp'] || keys['w']) { nextY -= speed; player.dir = 'up'; }
+        if (keys['ArrowDown'] || keys['s']) { nextY += speed; player.dir = 'down'; }
+        if (keys['ArrowLeft'] || keys['a']) { nextX -= speed; player.dir = 'left'; }
+        if (keys['ArrowRight'] || keys['d']) { nextX += speed; player.dir = 'right'; }
+
+        if (!checkWallCollision(nextX, player.y)) player.x = nextX;
+        if (!checkWallCollision(player.x, nextY)) player.y = nextY;
+
+        // Bounding box with offset
+        const minX = MAP_OFFSET_X + PLAYER_SIZE/2;
+        const maxX = CANVAS_WIDTH - MAP_OFFSET_X - PLAYER_SIZE/2;
+        const minY = MAP_OFFSET_Y + PLAYER_SIZE/2;
+        const maxY = CANVAS_HEIGHT - MAP_OFFSET_Y - PLAYER_SIZE/2;
+
+        player.x = Math.max(minX, Math.min(maxX, player.x));
+        player.y = Math.max(minY, Math.min(maxY, player.y));
+
+        if (skillActive && (Math.abs(player.x - nextX) > 0.1 || Math.abs(player.y - nextY) > 0.1)) {
+            playerTrail.push({x: player.x, y: player.y, alpha: 0.6});
+        }
+    }
+
+    for(let i=playerTrail.length-1; i>=0; i--) {
+        playerTrail[i].alpha -= 0.05;
+        if (playerTrail[i].alpha <= 0) playerTrail.splice(i, 1);
+    }
+
+    updateParticles();
+
+    hazards.forEach(h => {
+        let cycle = (Date.now() + h.offset) % 5000;
+        h.active = cycle < 2000; // 2s on
+        if (!skillActive && h.active && player.active && Math.hypot(player.x - h.x, player.y - h.y) < 25) {
+            player.active = false;
+            createParticles(player.x, player.y, '#00FF00', 50);
+            setTimeout(() => triggerGameOver("장애물에 닿았습니다!", false), 1000);
+        }
+    });
+
+    teleporters.forEach(t => {
+        if(t.cooldown > 0) t.cooldown--;
+        else if(player.active && Math.hypot(player.x - t.x, player.y - t.y) < 20) {
+            const dest = teleporters[t.linkIdx];
+            player.x = dest.x;
+            player.y = dest.y;
+            t.cooldown = 600; 
+            dest.cooldown = 600;
+            createExplosionParticles(player.x, player.y, t.color);
+        }
+    });
+
+    questionsInStage.forEach((q, index) => {
+        if (!q.solved) {
+            if (q.disabledUntil && Date.now() < q.disabledUntil) return;
+
+            const dist = Math.hypot(player.x - q.x, player.y - q.y);
+            if (dist < INTERACT_DIST) {
+                openQuiz(q, index);
+            }
+        }
+    });
+
+    if (questionsInStage.every(q => q.solved)) {
+        portal.open = true;
+        
+        // Remove hazards and teleporters immediately on stage clear
+        hazards = [];
+        teleporters = [];
+
+        ghosts.forEach(g => {
+            if (g.active) {
+                g.active = false;
+                createParticles(g.x, g.y, '#FF0000', 30);
+            }
+        });
+        
+        if (Math.random() < 0.3) {
+            createGatheringParticles(portal.x, portal.y, ['#00FFFF', '#FFFFFF']);
+        }
+    }
+
+    if (portal.open) {
+        const dist = Math.hypot(player.x - portal.x, player.y - portal.y);
+        if (dist < INTERACT_DIST) {
+            nextStage();
+        }
+    }
+
+    if (gameMode === 'ENDLESS') {
+        ghosts.forEach(g => {
+            if (!g.active) return;
+            if (g.isSpawning) {
+                if (Math.random() < 0.2) {
+                    createGatheringParticles(g.x, g.y, ['#FF0000', '#FFFFFF']);
+                }
+                
+                // Spawning is now controlled by ghostSpawnTimer in update()
+            } else {
+                // Ghost movement
+                const distToPlayer = Math.hypot(player.x - g.x, player.y - g.y);
+                // Skill: Invincible
+                if (!skillActive && player.active && distToPlayer < (PLAYER_SIZE/2 + GHOST_SIZE/2)) {
+                    player.active = false;
+                    createParticles(player.x, player.y, '#00FF00', 50);
+                    setTimeout(() => triggerGameOver("유령에게 잡혔습니다!", false), 1000);
+                    return;
+                }
+
+                let moveTargetX = player.x;
+                let moveTargetY = player.y;
+
+                if (distToPlayer > TILE_SIZE) {
+                    const nextStep = getNextMove(g.x, g.y, player.x, player.y);
+                    if (nextStep) {
+                        moveTargetX = nextStep.c * TILE_SIZE + TILE_SIZE/2 + MAP_OFFSET_X;
+                        moveTargetY = nextStep.r * TILE_SIZE + TILE_SIZE/2 + MAP_OFFSET_Y;
+                    }
+                }
+
+                const dx = moveTargetX - g.x;
+                const dy = moveTargetY - g.y;
+                const dist = Math.hypot(dx, dy);
+                
+                if (dist > 0) {
+                    const moveDist = g.speed;
+                    g.x += (dx / dist) * moveDist;
+                    g.y += (dy / dist) * moveDist;
+                }
+            }
+        });
+        
+        if (gameState === STATE.PLAYING && ghostSpawnTimer > 0) {
+             ghosts.forEach(g => {
+                 if (Math.random() < 0.2) {
+                    createGatheringParticles(g.x, g.y, ['#FF0000', '#FFFFFF']);
+                }
+            });
+        }
+        
+        if (gameState === STATE.PLAYING) {
+            const now = Date.now();
+            ghosts.forEach(g => {
+                if (g.active && g.isSpawning) {
+                     if (Math.random() < 0.2) {
+                        createGatheringParticles(g.x, g.y, ['#FF0000', '#FFFFFF']);
+                    }
+                    if (now >= g.spawnTime) {
+                        g.isSpawning = false;
+                    }
+                }
+            });
+        }
+    }
+}
+
+function checkWallCollision(x, y) {
+    const margin = PLAYER_SIZE / 2 - 2;
+    // Adjust x, y by removing offset to check against grid (0,0 based)
+    const testX = x - MAP_OFFSET_X;
+    const testY = y - MAP_OFFSET_Y;
+    
+    const points = [
+        { c: Math.floor((testX - margin) / TILE_SIZE), r: Math.floor((testY - margin) / TILE_SIZE) },
+        { c: Math.floor((testX + margin) / TILE_SIZE), r: Math.floor((testY - margin) / TILE_SIZE) },
+        { c: Math.floor((testX - margin) / TILE_SIZE), r: Math.floor((testY + margin) / TILE_SIZE) },
+        { c: Math.floor((testX + margin) / TILE_SIZE), r: Math.floor((testY + margin) / TILE_SIZE) }
+    ];
+
+    for (let p of points) {
+        if (p.r >= 0 && p.r < maze.length && p.c >= 0 && p.c < maze[0].length) {
+            if (maze[p.r][p.c] === 1) return true;
+        }
+    }
+    return false;
+}
+
+function nextStage() {
+    if (gameMode === 'TIME_ATTACK') {
+        totalPlayTime += Date.now() - startTime;
+        
+        if (stage >= 5) {
+            triggerClear();
+        } else {
+            stage++;
+            startStage();
+        }
+    } else {
+        score++;
+        stage++;
+        startStage();
+    }
+}
+
+class Particle {
+    constructor(x, y, color, type='explode') {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.life = 1.0;
+        this.type = type;
+        
+        if (type === 'explode') {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = Math.random() * 5 + 2; 
+            this.vx = Math.cos(angle) * speed;
+            this.vy = Math.sin(angle) * speed;
+            this.decay = Math.random() * 0.03 + 0.01;
+        } else if (type === 'gather') {
+            const angle = Math.random() * Math.PI * 2;
+            const dist = 40 + Math.random() * 20;
+            this.tx = x; 
+            this.ty = y;
+            this.x = x + Math.cos(angle) * dist;
+            this.y = y + Math.sin(angle) * dist;
+            this.vx = (this.tx - this.x) * 0.05;
+            this.vy = (this.ty - this.y) * 0.05;
+            this.decay = 0.05; 
+        }
+    }
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        if(this.type === 'explode') this.life -= this.decay;
+        else {
+            if (Math.hypot(this.tx - this.x, this.ty - this.y) < 2) this.life = 0;
+        }
+    }
+    draw(ctx) {
+        ctx.save();
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        // Revert to Rectangle (Pixel style) for in-game particles
+        ctx.fillRect(this.x, this.y, 4, 4); 
+        ctx.restore();
+    }
+}
+
+function createParticles(x, y, color, count=20) { 
+    for(let i=0; i<count; i++) {
+        particles.push(new Particle(x, y, color, 'explode'));
+    }
+}
+
+function createExplosionParticles(x, y, color, count=30) {
+    // Similar to Heart Scatter but with canvas
+    for(let i=0; i<count; i++) {
+        const p = new Particle(x, y, color, 'explode');
+        // Override for circle explosion
+        const angle = (i / count) * Math.PI * 2;
+        const speed = Math.random() * 3 + 3;
+        p.vx = Math.cos(angle) * speed;
+        p.vy = Math.sin(angle) * speed;
+        particles.push(p);
+    }
+}
+
+function createGatheringParticles(x, y, colors) {
+    for(let i=0; i<2; i++) {
+        const col = colors[Math.floor(Math.random() * colors.length)];
+        particles.push(new Particle(x, y, col, 'gather'));
+    }
+}
+
+function updateParticles() {
+    for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        if (particles[i].life <= 0) {
+            particles.splice(i, 1);
+        }
+    }
+}
+
+function drawParticles() {
+    particles.forEach(p => p.draw(ctx));
+}
+
+function startTransition(cb) {
+    transition.active = true;
+    transition.state = 'OUT'; 
+    transition.alpha = 0;
+    transition.callback = cb;
+}
+
+function updateTransition() {
+    if (!transition.active) return;
+    
+    if (transition.state === 'OUT') {
+        transition.alpha += 0.02; 
+        if (transition.alpha >= 1) {
+            transition.alpha = 1;
+            transition.state = 'IN';
+            if (transition.callback) {
+                transition.callback();
+                transition.callback = null;
+            }
+        }
+    } else if (transition.state === 'IN') {
+        transition.alpha -= 0.02;
+        if (transition.alpha <= 0) {
+            transition.alpha = 0;
+            transition.active = false;
+        }
+    }
+}
+
+function drawTransition() {
+    if (transition.active || transition.alpha > 0) {
+        ctx.save();
+        ctx.fillStyle = `rgba(0, 0, 0, ${transition.alpha})`;
+        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        ctx.restore();
+    }
+}
+
+function draw() {
+    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    if (gameState === STATE.TITLE) {
+        drawTitleScreen();
+        drawTransition();
+        return;
+    }
+
+    ctx.fillStyle = stageTheme.bg;
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    ctx.fillStyle = stageTheme.wall;
+    for (let r = 0; r < maze.length; r++) {
+        for (let c = 0; c < maze[0].length; c++) {
+            if (maze[r][c] === 1) {
+                ctx.fillStyle = stageTheme.wall;
+                // Add offset to draw position
+                ctx.fillRect(c * TILE_SIZE + MAP_OFFSET_X, r * TILE_SIZE + MAP_OFFSET_Y, TILE_SIZE, TILE_SIZE);
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(c * TILE_SIZE + MAP_OFFSET_X, r * TILE_SIZE + MAP_OFFSET_Y, TILE_SIZE, TILE_SIZE);
+                ctx.fillStyle = 'rgba(255,255,255,0.1)';
+                ctx.fillRect(c * TILE_SIZE + MAP_OFFSET_X, r * TILE_SIZE + MAP_OFFSET_Y, TILE_SIZE, 5);
+            }
+        }
+    }
+
+    const portalPulse = 1 + Math.sin(Date.now() / 200) * 0.1;
+    ctx.save();
+    ctx.translate(portal.x, portal.y);
+    ctx.scale(portalPulse, portalPulse);
+    ctx.beginPath();
+    ctx.arc(0, 0, 15, 0, Math.PI * 2);
+    ctx.fillStyle = portal.open ? COLORS.portal : '#555';
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+
+    hazards.forEach(h => {
+        if(h.active) {
+            ctx.fillStyle = 'red';
+            ctx.fillRect(h.x-15, h.y-15, 30, 30);
+            ctx.strokeStyle = '#fff';
+            ctx.strokeRect(h.x-15, h.y-15, 30, 30);
+        } else {
+            ctx.fillStyle = 'rgba(100, 0, 0, 0.3)';
+            ctx.fillRect(h.x-15, h.y-15, 30, 30);
+        }
+    });
+
+    teleporters.forEach(t => {
+        const pulse = 1 + Math.sin(Date.now() / 300) * 0.1;
+        ctx.save();
+        ctx.translate(t.x, t.y);
+        ctx.scale(pulse, pulse);
+        
+        // Draw Shape based on type
+        if (t.shape === 'hexagon') {
+            drawPolygon(ctx, 0, 0, 15, 6, t.color);
+        } else if (t.shape === 'star') {
+            drawStar(ctx, 0, 0, 15, t.color);
+        } else if (t.shape === 'pentagon') {
+            drawPolygon(ctx, 0, 0, 15, 5, t.color);
+        } else {
+            // Default square
+            ctx.strokeStyle = t.color;
+            ctx.lineWidth = 3;
+            ctx.strokeRect(-15, -15, 30, 30);
+        }
+        
+        // Inner Pulse
+        const size = (Date.now() % 1000) / 1000 * 10;
+        ctx.fillStyle = t.color;
+        ctx.globalAlpha = 0.5;
+        ctx.beginPath();
+        ctx.arc(0, 0, 5 + size, 0, Math.PI*2);
+        ctx.fill();
+        ctx.globalAlpha = 1.0;
+        
+        if (t.cooldown > 0) {
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.beginPath();
+            ctx.arc(0,0,15,0,Math.PI*2);
+            ctx.fill();
+        }
+        ctx.restore();
+    });
+
+    questionsInStage.forEach((q, index) => {
+        if (!q.solved) {
+            if (q.disabledUntil && Date.now() < q.disabledUntil) {
+                ctx.globalAlpha = 0.3;
+            } else {
+                ctx.globalAlpha = 1.0;
+            }
+
+            const boxPulse = 1 + Math.sin(Date.now() / 300) * 0.1;
+            ctx.save();
+            ctx.translate(q.x, q.y);
+            ctx.scale(boxPulse, boxPulse);
+            ctx.fillStyle = COLORS.door; 
+            ctx.fillRect(-12, -12, 24, 24);
+            ctx.strokeStyle = '#fff';
+            ctx.strokeRect(-12, -12, 24, 24);
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 20px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('!', 0, 1);
+            ctx.restore();
+            ctx.globalAlpha = 1.0;
+        }
+    });
+
+    drawParticles();
+
+    // Skill Trails
+    playerTrail.forEach(t => {
+        ctx.save();
+        ctx.globalAlpha = t.alpha;
+        ctx.fillStyle = 'cyan';
+        ctx.fillRect(t.x - PLAYER_SIZE/2, t.y - PLAYER_SIZE/2, PLAYER_SIZE, PLAYER_SIZE);
+        ctx.restore();
+    });
+
+    if (player.active) {
+        // Skill Shield
+        if (skillActive) {
+            ctx.save();
+            ctx.strokeStyle = 'cyan';
+            ctx.lineWidth = 2;
+            // Blinking Effect 3s before end
+            let opacity = 0.6;
+            if (skillTimeLeft <= 3000) {
+                 if (Math.floor(Date.now() / 200) % 2 === 0) {
+                     opacity = 0.2; 
+                 } else {
+                     opacity = 0.6; 
+                 }
+            }
+            ctx.globalAlpha = opacity;
+            
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, PLAYER_SIZE, 0, Math.PI*2);
+            ctx.stroke();
+            ctx.fillStyle = 'rgba(0, 255, 255, 0.2)';
+            ctx.fill();
+            ctx.restore();
+        }
+
+        ctx.fillStyle = COLORS.player;
+        ctx.fillRect(player.x - PLAYER_SIZE/2, player.y - PLAYER_SIZE/2, PLAYER_SIZE, PLAYER_SIZE);
+        ctx.fillStyle = COLORS.playerEyes;
+        let eyeOffX = 0, eyeOffY = 0;
+        if (player.dir === 'left') eyeOffX = -5;
+        if (player.dir === 'right') eyeOffX = 5;
+        if (player.dir === 'up') eyeOffY = -5;
+        if (player.dir === 'down') eyeOffY = 5;
+        ctx.fillRect(player.x - 7 + eyeOffX, player.y - 4 + eyeOffY, 4, 4);
+        ctx.fillRect(player.x + 3 + eyeOffX, player.y - 4 + eyeOffY, 4, 4);
+    }
+
+    if (gameMode === 'ENDLESS') {
+        ghosts.forEach(g => {
+            if (g.active && !g.isSpawning) {
+                ctx.beginPath();
+                ctx.arc(g.x, g.y, GHOST_SIZE/2, 0, Math.PI * 2);
+                ctx.fillStyle = COLORS.ghost;
+                ctx.fill();
+                ctx.fillStyle = COLORS.ghostEyes;
+                ctx.fillRect(g.x - 6, g.y - 3, 4, 4);
+                ctx.fillRect(g.x + 2, g.y - 3, 4, 4);
+            }
+        });
+        
+        if (gameState === STATE.PLAYING && ghostSpawnTimer > 0) {
+             ghosts.forEach(g => {
+                 if (Math.random() < 0.2) {
+                    createGatheringParticles(g.x, g.y, ['#FF0000', '#FFFFFF']);
+                }
+            });
+        }
+        
+        if (gameState === STATE.PLAYING) {
+            const now = Date.now();
+            ghosts.forEach(g => {
+                if (g.active && g.isSpawning) {
+                     if (Math.random() < 0.2) {
+                        createGatheringParticles(g.x, g.y, ['#FF0000', '#FFFFFF']);
+                    }
+                    if (now >= g.spawnTime) {
+                        g.isSpawning = false;
+                    }
+                }
+            });
+        }
+    }
+
+    drawHUD();
+
+    // Skill Button (Stage 5+)
+    if (stage >= 5 && gameState === STATE.PLAYING) {
+        drawSkillButton();
+    }
+
+    if (warningMessage) {
+        ctx.fillStyle = '#ff0000';
+        ctx.font = '40px "Do Hyeon"';
+        ctx.textAlign = 'center';
+        ctx.fillText(warningMessage, CANVAS_WIDTH/2, CANVAS_HEIGHT/2 - 100);
+    }
+
+    if (gameState === STATE.COUNTDOWN) {
+        ctx.save();
+        ctx.fillStyle = `rgba(255, 255, 0, ${Math.max(0, countdownAlpha)})`; 
+        ctx.font = '120px "Do Hyeon"';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = 'black';
+        ctx.shadowBlur = 10;
+        ctx.fillText(countdownLabel, CANVAS_WIDTH/2, CANVAS_HEIGHT/2);
+        ctx.restore();
+    }
+
+    if (gameState === STATE.PLAYING) {
+        const t = Date.now() - startTime;
+        if (t < 1000) { 
+            const alpha = 1 - (t / 1000);
+            ctx.save();
+            ctx.fillStyle = `rgba(255, 255, 0, ${Math.max(0, alpha)})`;
+            ctx.font = '120px "Do Hyeon"';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowColor = 'black';
+            ctx.shadowBlur = 10;
+            ctx.fillText("GO!", CANVAS_WIDTH/2, CANVAS_HEIGHT/2);
+            ctx.restore();
+        }
+    }
+    
+    if (gameState === STATE.PAUSED) {
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(0,0,CANVAS_WIDTH, CANVAS_HEIGHT);
+        
+        drawPauseButton();
+    }
+
+    drawTransition();
+}
+
+function drawPolygon(ctx, x, y, radius, sides, color) {
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    for (let i = 0; i < sides; i++) {
+        const angle = (i * 2 * Math.PI / sides) - Math.PI / 2;
+        const px = x + radius * Math.cos(angle);
+        const py = y + radius * Math.sin(angle);
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.stroke();
+}
+
+function drawStar(ctx, x, y, radius, color) {
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    const spikes = 5;
+    const outerRadius = radius;
+    const innerRadius = radius / 2;
+    let rot = Math.PI / 2 * 3;
+    let x_coord, y_coord;
+    const step = Math.PI / spikes;
+
+    ctx.moveTo(x, y - outerRadius);
+    for (let i = 0; i < spikes; i++) {
+        x_coord = x + Math.cos(rot) * outerRadius;
+        y_coord = y + Math.sin(rot) * outerRadius;
+        ctx.lineTo(x_coord, y_coord);
+        rot += step;
+
+        x_coord = x + Math.cos(rot) * innerRadius;
+        y_coord = y + Math.sin(rot) * innerRadius;
+        ctx.lineTo(x_coord, y_coord);
+        rot += step;
+    }
+    ctx.lineTo(x, y - outerRadius);
+    ctx.closePath();
+    ctx.stroke();
+}
+
+function drawSkillButton() {
+    const btnX = CANVAS_WIDTH - 65; 
+    const btnY = CANVAS_HEIGHT - 65; 
+    const radius = 60; 
+    
+    // Check overlap with player for transparency
+    const distToPlayer = Math.hypot(player.x - btnX, player.y - btnY);
+    const alpha = (distToPlayer < (radius + PLAYER_SIZE)) ? 0.3 : 1.0;
+
+    const isCoolingDown = (!skillActive && skillCooldownLeft > 0);
+    const isActive = skillActive;
+    
+    ctx.save();
+    ctx.translate(btnX, btnY);
+    ctx.globalAlpha = alpha; // Apply transparency
+    
+    // Background Circle
+    ctx.beginPath();
+    ctx.arc(0, 0, radius, 0, Math.PI * 2);
+    ctx.fillStyle = isCoolingDown ? 'rgba(0, 255, 255, 0.3)' : 'cyan';
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Shield Icon (Dark Grey)
+    ctx.fillStyle = '#333';
+    ctx.beginPath();
+    // Scale up shield slightly
+    ctx.moveTo(0, 30);
+    ctx.lineTo(-22, 8);
+    ctx.lineTo(-22, -22);
+    ctx.lineTo(22, -22);
+    ctx.lineTo(22, 8);
+    ctx.closePath();
+    ctx.fill();
+
+    // Lightning Icon (Yellow)
+    ctx.fillStyle = 'yellow';
+    ctx.beginPath();
+    // Scale up lightning slightly
+    ctx.moveTo(4, -14);
+    ctx.lineTo(-12, 0);
+    ctx.lineTo(-4, 0);
+    ctx.lineTo(-6, 14);
+    ctx.lineTo(12, -4);
+    ctx.lineTo(4, -4);
+    ctx.closePath();
+    ctx.fill();
+
+    // Countdown Ring (Active State - Counter Clockwise)
+    if (isActive) {
+        const ratio = Math.max(0, skillTimeLeft / skillTotalDuration);
+        const endAngle = -Math.PI / 2 - (Math.PI * 2 * ratio); 
+        
+        ctx.beginPath();
+        ctx.arc(0, 0, radius + 5, -Math.PI/2, endAngle, true);
+        ctx.strokeStyle = 'yellow';
+        ctx.lineWidth = 5;
+        ctx.stroke();
+    }
+    
+    // Cooldown Ring (Cooling Down - Clockwise)
+    if (isCoolingDown) {
+        const ratio = 1 - Math.max(0, skillCooldownLeft / SKILL_COOLDOWN_TIME);
+        const endAngle = -Math.PI / 2 + (Math.PI * 2 * ratio); 
+
+        ctx.beginPath();
+        ctx.arc(0, 0, radius + 5, -Math.PI/2, endAngle, false);
+        ctx.strokeStyle = 'rgba(255,255,255,0.7)'; // White ring for cooldown
+        ctx.lineWidth = 5;
+        ctx.stroke();
+    }
+
+    ctx.restore();
+}
+
+// Skill Button Click Handler
+canvas.addEventListener('mousedown', (e) => {
+    if (stage < 5) return;
+    
+    // Skill not interactable during quiz or pause (handled by gameState check, but good to be explicit)
+    if (gameState !== STATE.PLAYING) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+    
+    // 클릭 감지 영역도 드로잉 위치와 동일하게 수정
+    const btnX = CANVAS_WIDTH - 65; 
+    const btnY = CANVAS_HEIGHT - 65;
+    const radius = 60; 
+    
+    if (Math.hypot(x - btnX, y - btnY) < radius) {
+        if (!skillActive && skillCooldownLeft <= 0) {
+            skillActive = true;
+            // Duration calculation is already done in update loop, but set initial state
+            // Time is decremented in update()
+            let extraTime = 0;
+            if (stage >= 5) {
+                 extraTime = Math.floor((stage - 5) / 5) * 2000;
+            }
+            skillTotalDuration = Math.min(15000, 5000 + extraTime);
+            skillTimeLeft = skillTotalDuration;
+            
+            createParticles(player.x, player.y, 'cyan', 30);
+        }
+    }
+});
+
+function drawPauseButton() {
+    const btnX = CANVAS_WIDTH - 50;
+    const btnY = 15; 
+    const btnSize = 30;
+
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.lineJoin = "round";
+    ctx.strokeRect(btnX, btnY, btnSize, btnSize);
+    
+    ctx.fillStyle = '#fff';
+    if (gameState === STATE.PAUSED) {
+        ctx.beginPath();
+        ctx.moveTo(btnX + 10, btnY + 8);
+        ctx.lineTo(btnX + 22, btnY + 15);
+        ctx.lineTo(btnX + 10, btnY + 22);
+        ctx.fill();
+    } else {
+        ctx.fillRect(btnX + 9, btnY + 8, 4, 14);
+        ctx.fillRect(btnX + 17, btnY + 8, 4, 14);
+    }
+}
+
+function drawHUD() {
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(0, 0, CANVAS_WIDTH, 60);
+
+    ctx.font = '30px "Do Hyeon"';
+    ctx.textBaseline = 'middle';
+    
+    ctx.textAlign = 'left';
+    for(let i=0; i<hearts; i++) {
+        ctx.fillStyle = COLORS.uiHeart;
+        ctx.fillText('♥', 20 + i*40, 32); 
+    }
+
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'right';
+    const stageInfoX = CANVAS_WIDTH - 70; 
+
+    if (gameMode === 'TIME_ATTACK') {
+        ctx.fillText(`STAGE: ${stage}/5`, stageInfoX, 32);
+    } else {
+        ctx.fillText(`STAGE: ${stage}`, stageInfoX, 32);
+    }
+
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#fff';
+    ctx.font = '40px "Do Hyeon"'; 
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'black'; 
+    
+    if (gameMode === 'TIME_ATTACK') {
+        let currentSessionTime = 0;
+        if (gameState === STATE.PLAYING || gameState === STATE.QUIZ || gameState === STATE.WAITING || gameState === STATE.PAUSED) {
+            if (gameState === STATE.PAUSED) {
+                currentSessionTime = pauseStartTime - startTime;
+            } else {
+                currentSessionTime = Date.now() - startTime;
+            }
+        }
+        
+        let displayTimeMs = totalPlayTime + currentSessionTime;
+        
+        let min = Math.floor(displayTimeMs / 60000);
+        let sec = Math.floor((displayTimeMs % 60000) / 1000);
+        const text = `TIME: ${min}:${sec.toString().padStart(2, '0')}`;
+        ctx.strokeText(text, CANVAS_WIDTH/2, 38);
+        ctx.fillText(text, CANVAS_WIDTH/2, 38);
+    } else {
+        const text = `SCORE: ${score}`;
+        ctx.strokeText(text, CANVAS_WIDTH/2, 38);
+        ctx.fillText(text, CANVAS_WIDTH/2, 38);
+    }
+
+    if (gameMode !== 'TIME_ATTACK') {
+        // Endless Mode topic text hidden
+        // Only show if not endless
+        if (gameMode !== 'ENDLESS') {
+            ctx.textAlign = 'right';
+            ctx.font = '16px "Do Hyeon"';
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            ctx.fillText(stageTheme.topic || '', CANVAS_WIDTH - 20, CANVAS_HEIGHT - 20);
+        }
+    }
+    
+    if (gameState !== STATE.PAUSED) {
+        drawPauseButton();
+    }
+}
+
+function drawTitleScreen() {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.font = '100px "Do Hyeon"';
+    ctx.fillText('SCIENCE MAZE', CANVAS_WIDTH/2, 200); 
+    
+    ctx.fillStyle = '#FFFF00'; 
+    ctx.font = '50px "Do Hyeon"';
+    ctx.fillText('물질의 성질', CANVAS_WIDTH/2, 280);
+}
+
+// --- 9. Logic Helpers ---
+
+function openQuiz(qObj, idx) {
+    gameState = STATE.QUIZ;
+    const p = document.getElementById('quiz-popup');
+    document.getElementById('quiz-topic').innerText = "QUESTION"; 
+    document.getElementById('quiz-question').innerText = qObj.data.q;
+    
+    let limit = 10;
+    if (gameMode === 'TIME_ATTACK') {
+        const limits = [10, 9, 8, 7, 5];
+        limit = limits[Math.min(stage - 1, 4)];
+    } else {
+        limit = Math.max(5, 10 - Math.floor((stage - 1) / 3));
+    }
+    
+    quizTimeLeft = limit;
+    const timerEl = document.getElementById('quiz-timer');
+    timerEl.innerText = quizTimeLeft;
+    timerEl.style.color = 'white';
+    
+    if (quizInterval) clearInterval(quizInterval);
+    quizInterval = setInterval(() => {
+        quizTimeLeft--;
+        timerEl.innerText = quizTimeLeft;
+        if (quizTimeLeft <= 3) {
+            timerEl.style.color = 'red';
+        }
+        if (quizTimeLeft <= 0) {
+            clearInterval(quizInterval);
+            checkAnswer(false, qObj, idx); 
+        }
+    }, 1000);
+
+    const optsDiv = document.getElementById('quiz-options');
+    optsDiv.innerHTML = '';
+
+    // Shuffle options logic
+    const correctText = qObj.data.options[qObj.data.a];
+    const shuffledOptions = [...qObj.data.options].sort(() => Math.random() - 0.5);
+    
+    shuffledOptions.forEach((opt) => {
+        const btn = document.createElement('button');
+        btn.className = 'btn quiz-option';
+        btn.innerText = opt;
+        const isCorrect = (opt === correctText);
+        btn.onclick = () => checkAnswer(isCorrect, qObj, idx);
+        optsDiv.appendChild(btn);
+    });
+
+    p.classList.add('show');
+}
+
+function checkAnswer(isCorrect, qObj, qListIdx) {
+    if (quizInterval) clearInterval(quizInterval);
+    const p = document.getElementById('quiz-popup');
+    p.classList.remove('show'); 
+
+    if (isCorrect) {
+        qObj.solved = true;
+        createParticles(qObj.x, qObj.y, '#FFFF00', 30);
+
+        if (gameMode === 'ENDLESS') {
+            if (questionsInStage.every(q => q.solved)) {
+                ghosts.forEach(g => {
+                    if (g.active) {
+                        g.active = false;
+                        createParticles(g.x, g.y, '#FF0000', 30);
+                    }
+                });
+            }
+        }
+        gameState = STATE.PLAYING;
+    } else {
+        hearts--;
+        
+        // Timeout case passed as false
+        let msg = "틀렸습니다!";
+        if (quizTimeLeft <= 0) msg = "시간 초과!";
+
+        if (hearts <= 0) {
+            showMsg(msg, "하트가 깨졌습니다...", false);
+            setTimeout(() => {
+                closeMsg(); 
+                triggerGameOver("하트를 모두 소진했습니다!", false); 
+            }, 1800);
+            return;
+        }
+
+        player.x = qObj.x;
+        player.y = qObj.y;
+        qObj.disabledUntil = Date.now() + 6500;
+
+        if (gameMode === 'TIME_ATTACK') {
+            showMsg(msg, "하트가 깨졌습니다.<br>해당 문제는 5초간 잠깁니다.", false);
+            gameState = STATE.WAITING;
+            setTimeout(() => {
+                closeMsg();
+                gameState = STATE.PLAYING;
+            }, 1500); 
+        } else {
+            showMsg(msg, "하트가 깨졌습니다.<br>5초간 이 문제에 도전할 수 없습니다.", false);
+            setTimeout(() => {
+                closeMsg();
+                gameState = STATE.PLAYING;
+            }, 1500); 
+        }
+    }
+}
+
+function playHeartAnimation(parentPopup) {
+    const hContainer = document.getElementById('heart-anim-container');
+    const pixelHeart = document.getElementById('pixel-heart');
+    
+    hContainer.style.display = 'flex';
+    pixelHeart.classList.remove('heart-cracking');
+    void pixelHeart.offsetWidth; 
+    pixelHeart.classList.add('heart-cracking');
+    
+    setTimeout(() => {
+        if(parentPopup.classList.contains('show')) {
+             spawnHeartScatter(hContainer); 
+        }
+    }, 700);
+}
+
+function triggerGameOver(reason, animateHeart = true) {
+    gameState = STATE.GAMEOVER;
+    const title = (gameMode === 'ENDLESS') ? "FINISH" : "GAME OVER";
+    const color = (gameMode === 'ENDLESS') ? "#ffaa00" : "#ff0000"; 
+    
+    const p = document.getElementById('msg-popup');
+    const t = document.getElementById('msg-title');
+    const c = document.getElementById('msg-content');
+    const b = document.getElementById('msg-btn-container');
+
+    p.classList.add('show');
+    p.style.backgroundColor = 'rgba(0,0,0,0.9)'; 
+    p.style.borderColor = color;
+    
+    t.innerText = title;
+    t.style.color = color;
+
+    if (reason === "하트를 모두 소진했습니다!" && animateHeart) {
+        playHeartAnimation(p);
+    } else {
+        document.getElementById('heart-anim-container').style.display = 'none';
+    }
+    
+    let subText = reason;
+    let highlightText = '';
+    
+    if (gameMode === 'ENDLESS') {
+        subText += `<br>최종 점수`;
+        highlightText = `${score}`;
+    } else {
+        subText += "<br>도전에 실패했습니다.";
+    }
+    
+    c.innerHTML = `${subText}<div class="result-highlight" style="color:${color}">${highlightText}</div>`;
+    
+    b.innerHTML = '';
+    const homeBtn = document.createElement('button');
+    homeBtn.className = 'btn';
+    homeBtn.innerText = '타이틀로';
+    homeBtn.onclick = () => returnToTitle();
+    b.appendChild(homeBtn);
+}
+
+function spawnHeartScatter(parent) {
+    document.getElementById('pixel-heart').style.opacity = '0';
+    setTimeout(() => {
+        document.getElementById('pixel-heart').style.opacity = '1'; 
+    }, 1000);
+    
+    const centerX = parent.offsetWidth / 2;
+    const centerY = parent.offsetHeight / 2;
+    
+    for(let i=0; i<150; i++) {
+        const p = document.createElement('div');
+        p.className = 'heart-bit';
+        p.style.left = centerX + 'px';
+        p.style.top = centerY + 'px';
+        p.style.backgroundColor = Math.random() > 0.5 ? 'red' : 'white';
+        parent.appendChild(p);
+        
+        const angle = Math.random() * Math.PI * 2;
+        const dist = Math.random() * 150 + 80;
+        const tx = Math.cos(angle) * dist;
+        const ty = Math.sin(angle) * dist;
+        const rot = Math.random() * 720;
+        
+        p.animate([
+            { transform: 'translate(-50%, -50%) scale(1) rotate(0deg)', opacity: 1 },
+            { transform: `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px)) scale(0) rotate(${rot}deg)`, opacity: 0 }
+        ], {
+            duration: 1200 + Math.random() * 500,
+            easing: 'cubic-bezier(0.1, 0.9, 0.2, 1)', 
+            fill: 'forwards'
+        });
+        
+        setTimeout(() => p.remove(), 2000);
+    }
+}
+
+function triggerClear() {
+    gameState = STATE.CLEAR;
+    
+    let displayTimeMs = totalPlayTime;
+    let min = Math.floor(displayTimeMs / 60000);
+    let sec = Math.floor((displayTimeMs % 60000) / 1000);
+    const timeStr = `${min}:${sec.toString().padStart(2, '0')}`;
+    
+    const p = document.getElementById('msg-popup');
+    const tEl = document.getElementById('msg-title');
+    const c = document.getElementById('msg-content');
+    const b = document.getElementById('msg-btn-container');
+    const hContainer = document.getElementById('heart-anim-container');
+    
+    hContainer.style.display = 'none';
+    p.classList.add('show');
+    p.style.backgroundColor = 'rgba(0,0,0,0.9)'; 
+    p.style.borderColor = '#00ff00';
+    
+    tEl.innerText = "CLEAR";
+    tEl.style.color = "#00ff00";
+    
+    c.innerHTML = `모든 미로를 탈출했습니다!<br>최종 시간<div class="result-highlight" style="color:#00ff00">${timeStr}</div>`;
+    
+    b.innerHTML = '';
+    const homeBtn = document.createElement('button');
+    homeBtn.className = 'btn';
+    homeBtn.innerText = '타이틀로';
+    homeBtn.onclick = () => returnToTitle();
+    b.appendChild(homeBtn);
+}
+
+function returnToTitle() {
+    const p = document.getElementById('msg-popup');
+    p.classList.remove('show');
+    
+    // Hide Pause Menu
+    const pauseMenu = document.getElementById('pause-menu');
+    if(pauseMenu) pauseMenu.classList.remove('show');
+
+    startTransition(() => {
+        location.reload();
+    });
+}
+
+// Effect wrappers for buttons
+function resumeGameWithEffect(btn) {
+    createParticlesBtn(btn);
+    // User requested NO darkening for resume.
+    // Just toggle immediately.
+    setTimeout(() => {
+        togglePause(); // This hides menu and resumes game
+    }, 500); 
+}
+
+function returnToTitleWithEffect(btn) {
+    createParticlesBtn(btn);
+    // Apply 500ms delay for ripple to finish before transition
+    setTimeout(() => {
+         returnToTitle();
+    }, 500);
+}
+
+function createParticlesBtn(btn) {
+    const rect = btn.getBoundingClientRect();
+    const ripple = document.createElement('div');
+    ripple.className = 'ripple-effect';
+    ripple.style.position = 'absolute';
+    ripple.style.left = '0';
+    ripple.style.top = '0';
+    ripple.style.width = '100%';
+    ripple.style.height = '100%';
+    btn.appendChild(ripple);
+    
+    setTimeout(() => ripple.remove(), 500);
+}
+
+function showMsg(title, content, hasButton) {
+    const p = document.getElementById('msg-popup');
+    const hContainer = document.getElementById('heart-anim-container');
+
+    p.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+    hContainer.style.display = 'none';
+
+    if (title === "틀렸습니다!" || title === "시간 초과!") {
+        p.style.backgroundColor = 'rgba(150, 0, 0, 0.95)'; 
+        playHeartAnimation(p);
+    }
+
+    document.getElementById('msg-title').innerText = title;
+    if (title === "틀렸습니다!" || title === "시간 초과!") {
+        document.getElementById('msg-title').style.color = 'white';
+    } else {
+        document.getElementById('msg-title').style.color = 'red';
+    }
+    
+    document.getElementById('msg-content').innerHTML = content;
+    
+    const b = document.getElementById('msg-btn-container');
+    b.innerHTML = '';
+    if (hasButton) {
+        const btn = document.createElement('button');
+        btn.className = 'btn';
+        btn.innerText = '확인';
+        btn.onclick = closeMsg;
+        b.appendChild(btn);
+    }
+    p.classList.add('show');
+}
+
+function closeMsg() {
+    const p = document.getElementById('msg-popup');
+    p.classList.remove('show');
+    p.style.backgroundColor = 'rgba(0, 0, 0, 0.9)'; 
+    document.getElementById('heart-anim-container').style.display = 'none';
+}
+
+function togglePause() {
+    if (gameState === STATE.PLAYING) {
+        gameState = STATE.PAUSED;
+        pauseStartTime = Date.now();
+        // Show HTML Pause Menu
+        document.getElementById('pause-menu').classList.add('show');
+    } else if (gameState === STATE.PAUSED) {
+        // Resume logic: adjust startTime by the pause duration
+        const pauseDuration = Date.now() - pauseStartTime;
+        startTime += pauseDuration;
+        gameState = STATE.PLAYING;
+        // Hide HTML Pause Menu
+        document.getElementById('pause-menu').classList.remove('show');
+    }
+}
+
+window.addEventListener('keydown', e => {
+    keys[e.key] = true;
+    if (gameState === STATE.PLAYING && (e.key === 'p' || e.key === 'P')) togglePause();
+});
+window.addEventListener('keyup', e => keys[e.key] = false);
+
+canvas.addEventListener('mousedown', e => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+
+    if (x > CANVAS_WIDTH - 60 && y < 60) {
+        if (gameState === STATE.PLAYING || gameState === STATE.PAUSED) {
+            // Check if click is on the HTML pause menu? 
+            // No, the HTML menu is on top. If we click canvas, we want to pause.
+            // But if we are PAUSED, the HTML menu is blocking the canvas.
+            // So we only handle pause toggle here if PLAYING.
+            if(gameState === STATE.PLAYING) togglePause();
+        }
+    }
+});
+
+const btns = ['btn-up', 'btn-left', 'btn-down', 'btn-right'];
+const keyMap = {'btn-up': 'ArrowUp', 'btn-left': 'ArrowLeft', 'btn-down': 'ArrowDown', 'btn-right': 'ArrowRight'};
+
+btns.forEach(id => {
+    const el = document.getElementById(id);
+    const code = keyMap[id];
+    
+    const handlePress = (e) => {
+        e.preventDefault();
+        if (gameState !== STATE.PLAYING) return; // Prevent interaction if not playing
+        keys[code] = true;
+    };
+    
+    const handleRelease = (e) => {
+        e.preventDefault();
+        keys[code] = false;
+    };
+    
+    el.addEventListener('touchstart', handlePress);
+    el.addEventListener('touchend', handleRelease);
+    el.addEventListener('mousedown', handlePress);
+    el.addEventListener('mouseup', handleRelease);
+    el.addEventListener('mouseleave', handleRelease);
+});
+
+document.addEventListener('click', function(e) {
+    let target = e.target.closest('.btn');
+    // Ripple effect handled by dedicated functions or CSS
+});
+
+function createTitleUI() {
+    // Append to game-scaler instead of game-container
+    const scaler = document.getElementById('game-scaler'); 
+    const uiDiv = document.createElement('div');
+    uiDiv.id = 'title-ui';
+    uiDiv.style.position = 'absolute';
+    uiDiv.style.textAlign = 'center';
+    uiDiv.style.top = '50%'; 
+    uiDiv.style.left = '50%';
+    uiDiv.style.transform = 'translate(-50%, -50%)'; 
+    uiDiv.style.width = '100%';
+    uiDiv.style.height = '100%'; 
+    uiDiv.style.display = 'flex';
+    uiDiv.style.flexDirection = 'column';
+    uiDiv.style.justifyContent = 'center';
+    uiDiv.style.alignItems = 'center';
+    uiDiv.style.pointerEvents = 'none'; 
+
+    // 컨트롤 선택 버튼 컨테이너 (위치 변경: 좌측 상단 -> 우측 상단 구석)
+    const ctrlDiv = document.createElement('div');
+    ctrlDiv.style.position = 'absolute';
+    ctrlDiv.style.top = '5px';   // 상단 여백 최소화 (30px -> 5px)
+    ctrlDiv.style.right = '5px'; // 좌측 -> 우측, 여백 최소화
+    ctrlDiv.style.pointerEvents = 'auto'; 
+    
+    const pcBtn = document.createElement('button');
+    pcBtn.innerText = "PC (키보드)";
+    pcBtn.className = 'btn';
+    pcBtn.style.borderColor = 'yellow';
+    pcBtn.style.fontSize = '1.4rem';  // 크기 축소: 1.8rem -> 1.4rem
+    pcBtn.style.padding = '10px 20px'; // 패딩 축소: 15px 30px -> 10px 20px
+    
+    const mobBtn = document.createElement('button');
+    mobBtn.innerText = "모바일 (터치)";
+    mobBtn.className = 'btn';
+    mobBtn.style.fontSize = '1.4rem'; // 크기 축소: 1.8rem -> 1.4rem
+    mobBtn.style.padding = '10px 20px'; // 패딩 축소: 15px 30px -> 10px 20px
+    
+    pcBtn.onclick = () => { controlType = 'PC'; pcBtn.style.borderColor='yellow'; mobBtn.style.borderColor='white'; };
+    mobBtn.onclick = () => { controlType = 'MOBILE'; mobBtn.style.borderColor='yellow'; pcBtn.style.borderColor='white'; };
+    
+    ctrlDiv.appendChild(pcBtn);
+    ctrlDiv.appendChild(mobBtn);
+    uiDiv.appendChild(ctrlDiv);
+
+    const centerGroup = document.createElement('div');
+    centerGroup.style.marginTop = '250px'; 
+    centerGroup.style.pointerEvents = 'auto';
+
+    const btnContainer = document.createElement('div');
+    btnContainer.style.display = 'flex';
+    btnContainer.style.justifyContent = 'center';
+    btnContainer.style.gap = '50px'; 
+
+    const taBtn = document.createElement('button');
+    taBtn.innerText = "Time Attack";
+    taBtn.className = 'btn';
+    taBtn.style.fontSize = '2rem'; 
+    taBtn.style.padding = '20px 40px'; 
+    taBtn.style.borderRadius = '10px';
+    
+    const erBtn = document.createElement('button');
+    erBtn.innerText = "Endless Rush";
+    erBtn.className = 'btn';
+    erBtn.style.fontSize = '2rem';
+    erBtn.style.padding = '20px 40px';
+    erBtn.style.borderRadius = '10px';
+
+    const descContainer = document.createElement('div');
+    descContainer.style.display = 'flex';
+    descContainer.style.justifyContent = 'center';
+    descContainer.style.alignItems = 'center';
+    descContainer.style.width = '100%';
+    descContainer.style.marginTop = '40px'; 
+
+    const desc = document.createElement('div');
+    desc.style.color = '#ccc';
+    desc.style.height = '50px'; 
+    desc.style.lineHeight = '50px'; 
+    desc.style.fontSize = '32px'; 
+    
+    const defaultDesc = "모드 버튼 위에 마우스를 올리면 설명이 나옵니다.";
+    desc.innerText = defaultDesc;
+
+    descContainer.appendChild(desc);
+
+    taBtn.onmouseenter = () => desc.innerText = "5개의 테마 미로를 최대한 빨리 탈출하세요!";
+    taBtn.onmouseleave = () => desc.innerText = defaultDesc;
+    taBtn.onclick = () => startGameWrapper('TIME_ATTACK');
+
+    erBtn.onmouseenter = () => desc.innerText = "쫓아오는 유령을 피해 최대한 오래 살아남으세요!";
+    erBtn.onmouseleave = () => desc.innerText = defaultDesc;
+    erBtn.onclick = () => startGameWrapper('ENDLESS');
+
+    btnContainer.appendChild(taBtn);
+    btnContainer.appendChild(erBtn);
+    
+    centerGroup.appendChild(btnContainer);
+    centerGroup.appendChild(descContainer);
+    
+    uiDiv.appendChild(centerGroup);
+
+    scaler.appendChild(uiDiv); 
+}
+
+function startGameWrapper(mode) {
+    const btnContainer = document.querySelector('#title-ui');
+    if (btnContainer) {
+        btnContainer.style.pointerEvents = 'none'; // Prevent double clicks
+        btnContainer.style.transition = 'opacity 0.5s'; 
+        btnContainer.style.opacity = '0';
+    }
+
+    // Apply delay for ripple effect
+    setTimeout(() => {
+         startTransition(() => {
+            startGame(mode);
+        });
+    }, 500);
+}
+
+function startGame(mode) {
+    gameMode = mode;
+    const ui = document.getElementById('title-ui');
+    if(ui) ui.remove();
+    
+    if (controlType === 'MOBILE') {
+        document.getElementById('mobile-controls').style.display = 'grid';
+    }
+    initGame();
+}
+
+function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+}
+
+// 화면 리사이징 처리 함수
+function handleResize() {
+    const scaler = document.getElementById('game-scaler');
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const gameW = 800;
+    const gameH = 600;
+    
+    // Calculate scale to fit window while maintaining aspect ratio
+    const scale = Math.min(w / gameW, h / gameH);
+    
+    scaler.style.transform = `scale(${scale})`;
+}
+
+// 리사이즈 이벤트 리스너 등록
+window.addEventListener('resize', handleResize);
+
+// 초기 실행 시 리사이징 적용
+handleResize();
+createTitleUI();
+loop();
+
+</script>
+</body>
+</html>
