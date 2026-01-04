@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SCIENCE MAZE: 물질의 성질</title>
+    <title>SCIENCE MAZE: 물질의 성질 (Camera Ver)</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=VT323&family=Do+Hyeon&display=swap');
 
@@ -217,6 +217,7 @@
             transition: opacity 0.5s;
         }
 
+        /* 하트 파괴 모션 스타일 */
         .heart-anim-box {
             position: relative;
             width: 150px;
@@ -283,36 +284,41 @@
             z-index: 250;
         }
 
-        /* 모바일 컨트롤러 - 좌측 하단 배치 */
-        #mobile-controls {
+        /* 원형 조이스틱 스타일 */
+        #joystick-zone {
             position: absolute;
-            bottom: 5px;
-            left: 5px;
-            display: none;
-            grid-template-columns: repeat(3, 80px);
-            grid-template-rows: repeat(2, 80px);
-            gap: 10px;
+            bottom: 30px;
+            left: 30px;
+            width: 160px;
+            height: 160px;
             z-index: 50;
-            transition: opacity 0.1s; 
+            display: none;
+            touch-action: none;
         }
 
-        .control-btn {
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid white;
-            border-radius: 10px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 32px;
-            color: white;
-            user-select: none;
-            cursor: pointer;
+        #joystick-base {
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 4px solid rgba(0, 255, 255, 0.6);
+            border-radius: 50%;
+            position: relative;
+            box-sizing: border-box;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
         }
-        .control-btn:active { background: rgba(255, 255, 255, 0.5); }
-        #btn-up { grid-column: 2; grid-row: 1; }
-        #btn-left { grid-column: 1; grid-row: 2; }
-        #btn-down { grid-column: 2; grid-row: 2; }
-        #btn-right { grid-column: 3; grid-row: 2; }
+
+        #joystick-handle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 70px;
+            height: 70px;
+            background: rgba(0, 255, 255, 0.8);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            box-shadow: 0 0 10px cyan;
+        }
 
     </style>
 </head>
@@ -340,13 +346,20 @@
 
         <div id="msg-popup" class="popup">
             <h2 id="msg-title">제목</h2>
+            <!-- 하트 애니메이션 HTML 구조 (Row 5 3번째 블록 활성화 상태) -->
             <div id="heart-anim-container" class="heart-anim-box" style="display:none;">
                 <div id="pixel-heart" class="pixel-heart">
+                    <!-- Row 1 -->
                     <div class="pixel p-hide"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel p-hide"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel p-hide"></div>
+                    <!-- Row 2 -->
                     <div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div>
+                    <!-- Row 3 -->
                     <div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div>
+                    <!-- Row 4 -->
                     <div class="pixel p-hide"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel p-hide"></div>
-                    <div class="pixel p-hide"></div><div class="pixel p-hide"></div><div class="pixel p-hide"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel p-hide"></div><div class="pixel p-hide"></div>
+                    <!-- Row 5 (수정: 3번째 블록 p-hide 제거) -->
+                    <div class="pixel p-hide"></div><div class="pixel p-hide"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div class="pixel p-hide"></div><div class="pixel p-hide"></div>
+                    <!-- Row 6 -->
                     <div class="pixel p-hide"></div><div class="pixel p-hide"></div><div class="pixel p-hide"></div><div class="pixel"></div><div class="pixel p-hide"></div><div class="pixel p-hide"></div><div class="pixel p-hide"></div>
                 </div>
             </div>
@@ -354,11 +367,11 @@
             <div id="msg-btn-container"></div>
         </div>
 
-        <div id="mobile-controls">
-            <div id="btn-up" class="control-btn">▲</div>
-            <div id="btn-left" class="control-btn">◀</div>
-            <div id="btn-down" class="control-btn">▼</div>
-            <div id="btn-right" class="control-btn">▶</div>
+        <!-- 원형 조이스틱 구조 -->
+        <div id="joystick-zone">
+            <div id="joystick-base">
+                <div id="joystick-handle"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -408,7 +421,7 @@ const STATE = {
     COUNTDOWN: 7
 };
 
-// 중학교 2학년 과학 '물질의 성질' 교과서 내용 반영 (엄격히 교과과정 준수)
+// 중학교 2학년 과학 '물질의 성질' 교과서 내용 반영
 const QUESTIONS_DB = {
     '순물질과 혼합물': [
         { q: "한 가지 물질로만 이루어진 물질은?", options: ["순물질", "혼합물", "화합물", "용액"], a: 0 },
@@ -465,7 +478,7 @@ const QUESTIONS_DB = {
         { q: "탄산음료를 차갑게 보관하는 이유는?", options: ["기체의 용해도를 높이기 위해", "기체의 용해도를 낮추기 위해", "맛을 없애기 위해", "색을 변하게 하기 위해"], a: 0 },
         { q: "온도에 따른 용해도 차이를 이용하여 순수한 고체를 얻는 방법은?", options: ["증류", "분별 깔때기법", "재결정", "크로마토그래피"], a: 2 },
         { q: "질산칼륨과 염화나트륨 혼합물을 분리할 때 가장 적절한 방법은?", options: ["밀도 차 분리", "끓는점 차 분리", "재결정", "거름"], a: 2 },
-        { q: "포화 용액의 온도를 낮출 때 생기는 고체의 양을 구하려면?", options: ["처음 녹인 양 - 나중 온도에서의 용해도", "나중 용해도 - 처음 용해도", "용매의 질량 + 용질의 질량", "밀도 × 부피"], a: 0 },
+        { q: "포화 용액의 온도를 낮출 때 생기는 고체의 양을 구하려면?", options: ["처음 녹인 양 - 나중 온도에서 녹을 수 있는 양", "나중 용해도 - 처음 용해도", "용매의 질량 + 용질의 질량", "밀도 × 부피"], a: 0 },
         { q: "천일염에서 깨끗한 소금을 얻는 과정에 이용되는 원리는?", options: ["재결정", "증류", "밀도 차", "크로마토그래피"], a: 0 },
         { q: "여름철 물고기들이 수면 위로 입을 내미는 이유는?", options: ["먹이를 찾으려고", "수온이 높아 산소 용해도가 감소해서", "수압이 낮아져서", "빛을 보려고"], a: 1 }
     ],
@@ -718,12 +731,33 @@ function startStage() {
             if (distP > 100) {
                 let qData;
                 if (gameMode === 'TIME_ATTACK') {
+                    // 타임 어택: 순서대로 배치 (DB가 충분히 크므로 한 스테이지 내 중복 없음)
                     qData = QUESTIONS_DB[stageTheme.topic][placed % QUESTIONS_DB[stageTheme.topic].length];
                 } else {
-                    const allTopics = Object.keys(QUESTIONS_DB);
-                    const rTopic = allTopics[Math.floor(Math.random() * allTopics.length)];
-                    const qList = QUESTIONS_DB[rTopic];
-                    qData = qList[Math.floor(Math.random() * qList.length)];
+                    // 랜덤 모드: 중복 검사 로직 추가
+                    let unique = false;
+                    let safety = 0;
+                    while(!unique && safety < 50) {
+                        safety++;
+                        const allTopics = Object.keys(QUESTIONS_DB);
+                        const rTopic = allTopics[Math.floor(Math.random() * allTopics.length)];
+                        const qList = QUESTIONS_DB[rTopic];
+                        const candidate = qList[Math.floor(Math.random() * qList.length)];
+                        
+                        // 이미 배치된 문제인지 텍스트로 확인
+                        const alreadyExists = questionsInStage.some(existing => existing.data.q === candidate.q);
+                        
+                        if (!alreadyExists) {
+                            qData = candidate;
+                            unique = true;
+                        }
+                    }
+                    // 안전 장치: 50번 시도해도 실패하면 아무거나 배정 (거의 발생 안 함)
+                    if (!unique) {
+                         const allTopics = Object.keys(QUESTIONS_DB);
+                         const rTopic = allTopics[Math.floor(Math.random() * allTopics.length)];
+                         qData = QUESTIONS_DB[rTopic][0];
+                    }
                 }
 
                 questionsInStage.push({
@@ -918,12 +952,12 @@ function update() {
     if (dt > 1000) return; 
 
     if (transition.active && transition.state === 'OUT') {
-        const mob = document.getElementById('mobile-controls');
-        if(mob) mob.style.opacity = 1 - transition.alpha;
+        const joy = document.getElementById('joystick-zone');
+        if(joy) joy.style.opacity = 1 - transition.alpha;
         return; 
     } else if (transition.active && transition.state === 'IN') {
-        const mob = document.getElementById('mobile-controls');
-        if(mob) mob.style.opacity = 1 - transition.alpha;
+        const joy = document.getElementById('joystick-zone');
+        if(joy) joy.style.opacity = 1 - transition.alpha;
     }
 
     if (gameState === STATE.COUNTDOWN) {
@@ -1315,25 +1349,46 @@ function draw() {
         return;
     }
 
+    // --- 1. 배경 (전체 화면 덮기) ---
     ctx.fillStyle = stageTheme.bg;
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-    ctx.fillStyle = stageTheme.wall;
+    // --- 2. 카메라 변환 시작 ---
+    ctx.save();
+    
+    // 화면 중앙으로 이동
+    ctx.translate(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+    // 플레이어 위치만큼 반대로 이동 (Camera Follow)
+    ctx.translate(-player.x, -player.y);
+
+    // --- 3. 월드 그리기 (카메라 적용됨) ---
+
+    // 3-1. 바닥(Floor)과 벽(Wall) 그리기
+    // 바닥을 먼저 그려야 움직이는 느낌이 납니다.
     for (let r = 0; r < maze.length; r++) {
         for (let c = 0; c < maze[0].length; c++) {
+            const x = c * TILE_SIZE + MAP_OFFSET_X;
+            const y = r * TILE_SIZE + MAP_OFFSET_Y;
+            
             if (maze[r][c] === 1) {
+                // 벽
                 ctx.fillStyle = stageTheme.wall;
-                // Add offset to draw position
-                ctx.fillRect(c * TILE_SIZE + MAP_OFFSET_X, r * TILE_SIZE + MAP_OFFSET_Y, TILE_SIZE, TILE_SIZE);
+                ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
                 ctx.strokeStyle = '#000';
                 ctx.lineWidth = 2;
-                ctx.strokeRect(c * TILE_SIZE + MAP_OFFSET_X, r * TILE_SIZE + MAP_OFFSET_Y, TILE_SIZE, TILE_SIZE);
+                ctx.strokeRect(x, y, TILE_SIZE, TILE_SIZE);
+                // 입체감
                 ctx.fillStyle = 'rgba(255,255,255,0.1)';
-                ctx.fillRect(c * TILE_SIZE + MAP_OFFSET_X, r * TILE_SIZE + MAP_OFFSET_Y, TILE_SIZE, 5);
+                ctx.fillRect(x, y, TILE_SIZE, 5);
+            } else {
+                // 바닥 (길) - 움직임 확인용 그리드 효과
+                ctx.fillStyle = 'rgba(255,255,255,0.03)'; // 아주 옅은 흰색
+                ctx.fillRect(x + 2, y + 2, TILE_SIZE - 4, TILE_SIZE - 4);
             }
         }
     }
 
+    // 3-2. 포탈 그리기
     const portalPulse = 1 + Math.sin(Date.now() / 200) * 0.1;
     ctx.save();
     ctx.translate(portal.x, portal.y);
@@ -1347,6 +1402,7 @@ function draw() {
     ctx.stroke();
     ctx.restore();
 
+    // 3-3. 장애물 그리기
     hazards.forEach(h => {
         if(h.active) {
             ctx.fillStyle = 'red';
@@ -1359,13 +1415,13 @@ function draw() {
         }
     });
 
+    // 3-4. 텔레포터 그리기
     teleporters.forEach(t => {
         const pulse = 1 + Math.sin(Date.now() / 300) * 0.1;
         ctx.save();
         ctx.translate(t.x, t.y);
         ctx.scale(pulse, pulse);
         
-        // Draw Shape based on type
         if (t.shape === 'hexagon') {
             drawPolygon(ctx, 0, 0, 15, 6, t.color);
         } else if (t.shape === 'star') {
@@ -1373,13 +1429,11 @@ function draw() {
         } else if (t.shape === 'pentagon') {
             drawPolygon(ctx, 0, 0, 15, 5, t.color);
         } else {
-            // Default square
             ctx.strokeStyle = t.color;
             ctx.lineWidth = 3;
             ctx.strokeRect(-15, -15, 30, 30);
         }
         
-        // Inner Pulse
         const size = (Date.now() % 1000) / 1000 * 10;
         ctx.fillStyle = t.color;
         ctx.globalAlpha = 0.5;
@@ -1397,6 +1451,7 @@ function draw() {
         ctx.restore();
     });
 
+    // 3-5. 문제(아이템) 그리기
     questionsInStage.forEach((q, index) => {
         if (!q.solved) {
             if (q.disabledUntil && Date.now() < q.disabledUntil) {
@@ -1423,9 +1478,10 @@ function draw() {
         }
     });
 
+    // 3-6. 파티클 및 효과 그리기
     drawParticles();
 
-    // Skill Trails
+    // 스킬 트레일 (잔상)
     playerTrail.forEach(t => {
         ctx.save();
         ctx.globalAlpha = t.alpha;
@@ -1434,13 +1490,12 @@ function draw() {
         ctx.restore();
     });
 
+    // 3-7. 플레이어 그리기
     if (player.active) {
-        // Skill Shield
         if (skillActive) {
             ctx.save();
             ctx.strokeStyle = 'cyan';
             ctx.lineWidth = 2;
-            // Blinking Effect 3s before end
             let opacity = 0.6;
             if (skillTimeLeft <= 3000) {
                  if (Math.floor(Date.now() / 200) % 2 === 0) {
@@ -1471,6 +1526,7 @@ function draw() {
         ctx.fillRect(player.x + 3 + eyeOffX, player.y - 4 + eyeOffY, 4, 4);
     }
 
+    // 3-8. 유령 그리기
     if (gameMode === 'ENDLESS') {
         ghosts.forEach(g => {
             if (g.active && !g.isSpawning) {
@@ -1483,37 +1539,22 @@ function draw() {
                 ctx.fillRect(g.x + 2, g.y - 3, 4, 4);
             }
         });
-        
-        if (gameState === STATE.PLAYING && ghostSpawnTimer > 0) {
-             ghosts.forEach(g => {
-                 if (Math.random() < 0.2) {
-                    createGatheringParticles(g.x, g.y, ['#FF0000', '#FFFFFF']);
-                }
-            });
-        }
-        
-        if (gameState === STATE.PLAYING) {
-            const now = Date.now();
-            ghosts.forEach(g => {
-                if (g.active && g.isSpawning) {
-                     if (Math.random() < 0.2) {
-                        createGatheringParticles(g.x, g.y, ['#FF0000', '#FFFFFF']);
-                    }
-                    if (now >= g.spawnTime) {
-                        g.isSpawning = false;
-                    }
-                }
-            });
-        }
     }
 
+    // --- 4. 카메라 변환 종료 ---
+    ctx.restore();
+
+    // --- 5. UI 그리기 (화면에 고정) ---
+
+    // 5-1. HUD
     drawHUD();
 
-    // Skill Button (Stage 5+)
+    // 5-2. 스킬 버튼
     if (stage >= 5 && gameState === STATE.PLAYING) {
         drawSkillButton();
     }
 
+    // 5-3. 경고 메시지
     if (warningMessage) {
         ctx.fillStyle = '#ff0000';
         ctx.font = '40px "Do Hyeon"';
@@ -1521,6 +1562,7 @@ function draw() {
         ctx.fillText(warningMessage, CANVAS_WIDTH/2, CANVAS_HEIGHT/2 - 100);
     }
 
+    // 5-4. 카운트다운
     if (gameState === STATE.COUNTDOWN) {
         ctx.save();
         ctx.fillStyle = `rgba(255, 255, 0, ${Math.max(0, countdownAlpha)})`; 
@@ -1533,6 +1575,7 @@ function draw() {
         ctx.restore();
     }
 
+    // 5-5. GO 메시지
     if (gameState === STATE.PLAYING) {
         const t = Date.now() - startTime;
         if (t < 1000) { 
@@ -1549,13 +1592,14 @@ function draw() {
         }
     }
     
+    // 5-6. 일시정지 오버레이
     if (gameState === STATE.PAUSED) {
         ctx.fillStyle = 'rgba(0,0,0,0.5)';
         ctx.fillRect(0,0,CANVAS_WIDTH, CANVAS_HEIGHT);
-        
         drawPauseButton();
     }
 
+    // 5-7. 화면 전환 효과
     drawTransition();
 }
 
@@ -1603,6 +1647,8 @@ function drawStar(ctx, x, y, radius, color) {
 }
 
 function drawSkillButton() {
+    // 위치를 더 구석으로 이동 (여백 10px -> 5px)
+    // Radius 60, so Center = (W-65, H-65) -> Edge at W-5, H-5
     const btnX = CANVAS_WIDTH - 65; 
     const btnY = CANVAS_HEIGHT - 65; 
     const radius = 60; 
@@ -1676,10 +1722,44 @@ function drawSkillButton() {
         ctx.stroke();
     }
 
+    // 텍스트 표시 로직 추가 (수정: 깜빡임 효과 적용)
+    if (!skillActive && skillCooldownLeft <= 0) {
+        // 0.5초 주기로 깜빡임
+        if (Math.floor(Date.now() / 500) % 2 === 0) {
+            ctx.fillStyle = '#fff';
+            ctx.font = '24px "Do Hyeon"';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.shadowColor = 'black';
+            ctx.shadowBlur = 5;
+            
+            const label = (controlType === 'PC') ? 'SPACE' : 'TOUCH';
+            ctx.fillText(label, 0, -radius - 10); // 버튼 위에 텍스트 표시
+        }
+    }
+
     ctx.restore();
 }
 
-// Skill Button Click Handler
+// 스킬 발동 함수 분리
+function activateSkill() {
+    if (stage < 5) return;
+    if (gameState !== STATE.PLAYING) return;
+    
+    if (!skillActive && skillCooldownLeft <= 0) {
+        skillActive = true;
+        let extraTime = 0;
+        if (stage >= 5) {
+             extraTime = Math.floor((stage - 5) / 5) * 2000;
+        }
+        skillTotalDuration = Math.min(15000, 5000 + extraTime);
+        skillTimeLeft = skillTotalDuration;
+        
+        createParticles(player.x, player.y, 'cyan', 30);
+    }
+}
+
+// Skill Button Click Handler (MouseDown)
 canvas.addEventListener('mousedown', (e) => {
     if (stage < 5) return;
     
@@ -1698,19 +1778,7 @@ canvas.addEventListener('mousedown', (e) => {
     const radius = 60; 
     
     if (Math.hypot(x - btnX, y - btnY) < radius) {
-        if (!skillActive && skillCooldownLeft <= 0) {
-            skillActive = true;
-            // Duration calculation is already done in update loop, but set initial state
-            // Time is decremented in update()
-            let extraTime = 0;
-            if (stage >= 5) {
-                 extraTime = Math.floor((stage - 5) / 5) * 2000;
-            }
-            skillTotalDuration = Math.min(15000, 5000 + extraTime);
-            skillTimeLeft = skillTotalDuration;
-            
-            createParticles(player.x, player.y, 'cyan', 30);
-        }
+        activateSkill(); // 분리된 함수 호출
     }
 });
 
@@ -1882,6 +1950,10 @@ function checkAnswer(isCorrect, qObj, qListIdx) {
 
         if (gameMode === 'ENDLESS') {
             if (questionsInStage.every(q => q.solved)) {
+                // Remove hazards and teleporters immediately on stage clear
+                hazards = [];
+                teleporters = [];
+
                 ghosts.forEach(g => {
                     if (g.active) {
                         g.active = false;
@@ -1928,6 +2000,7 @@ function checkAnswer(isCorrect, qObj, qListIdx) {
     }
 }
 
+// 제공해주신 하트 애니메이션 로직 그대로 적용
 function playHeartAnimation(parentPopup) {
     const hContainer = document.getElementById('heart-anim-container');
     const pixelHeart = document.getElementById('pixel-heart');
@@ -2140,25 +2213,49 @@ function closeMsg() {
     document.getElementById('heart-anim-container').style.display = 'none';
 }
 
+// 수정된 togglePause 함수: 모든 시간 기반 요소들(페널티, 장애물 등)을 일시정지
 function togglePause() {
     if (gameState === STATE.PLAYING) {
         gameState = STATE.PAUSED;
         pauseStartTime = Date.now();
-        // Show HTML Pause Menu
         document.getElementById('pause-menu').classList.add('show');
     } else if (gameState === STATE.PAUSED) {
-        // Resume logic: adjust startTime by the pause duration
         const pauseDuration = Date.now() - pauseStartTime;
         startTime += pauseDuration;
+        
+        // 오답 페널티 타이머 조정
+        questionsInStage.forEach(q => {
+            if (q.disabledUntil > 0) {
+                q.disabledUntil += pauseDuration;
+            }
+        });
+
+        // 장애물(Hazard) 주기 조정
+        hazards.forEach(h => {
+            h.offset -= pauseDuration; 
+        });
+
+        // 유령 생성 타이머 조정
+        ghosts.forEach(g => {
+            if (g.spawnTime) {
+                g.spawnTime += pauseDuration;
+            }
+        });
+
+        // 마지막 프레임 시간 재설정 (엄청난 dt 점프 방지)
+        lastTime = Date.now();
+
         gameState = STATE.PLAYING;
-        // Hide HTML Pause Menu
         document.getElementById('pause-menu').classList.remove('show');
     }
 }
 
 window.addEventListener('keydown', e => {
     keys[e.key] = true;
-    if (gameState === STATE.PLAYING && (e.key === 'p' || e.key === 'P')) togglePause();
+    if (gameState === STATE.PLAYING) {
+        if (e.key === 'p' || e.key === 'P') togglePause();
+        if (e.key === ' ' || e.code === 'Space') activateSkill(); // 스페이스 바로 스킬 사용
+    }
 });
 window.addEventListener('keyup', e => keys[e.key] = false);
 
@@ -2181,33 +2278,9 @@ canvas.addEventListener('mousedown', e => {
     }
 });
 
-const btns = ['btn-up', 'btn-left', 'btn-down', 'btn-right'];
-const keyMap = {'btn-up': 'ArrowUp', 'btn-left': 'ArrowLeft', 'btn-down': 'ArrowDown', 'btn-right': 'ArrowRight'};
-
-btns.forEach(id => {
-    const el = document.getElementById(id);
-    const code = keyMap[id];
-    
-    // Add passive: false to allow preventDefault
-    const options = { passive: false };
-
-    const handlePress = (e) => {
-        if (e.cancelable) e.preventDefault();
-        if (gameState !== STATE.PLAYING) return; 
-        keys[code] = true;
-    };
-    
-    const handleRelease = (e) => {
-        if (e.cancelable) e.preventDefault();
-        keys[code] = false;
-    };
-    
-    el.addEventListener('touchstart', handlePress, options);
-    el.addEventListener('touchend', handleRelease, options);
-    el.addEventListener('mousedown', handlePress);
-    el.addEventListener('mouseup', handleRelease);
-    el.addEventListener('mouseleave', handleRelease);
-});
+// REMOVED old btns array logic to fix error
+// Joystic logic handles input for mobile
+// Keydown handles input for PC
 
 document.addEventListener('click', function(e) {
     let target = e.target.closest('.btn');
@@ -2341,7 +2414,9 @@ function startGame(mode) {
     if(ui) ui.remove();
     
     if (controlType === 'MOBILE') {
-        document.getElementById('mobile-controls').style.display = 'grid';
+        // 모바일 모드 시 조이스틱 표시
+        const joystick = document.getElementById('joystick-zone');
+        if(joystick) joystick.style.display = 'block';
     }
     initGame();
 }
@@ -2355,16 +2430,12 @@ function loop() {
 // 화면 리사이징 처리 함수
 function handleResize() {
     const scaler = document.getElementById('game-scaler');
-    // window.innerWidth/Height는 스크롤바를 포함할 수 있으므로 clientWidth/Height가 안전할 수 있음
-    // 하지만 overflow: hidden body이므로 window도 무방.
-    // 모바일 브라우저 상/하단 바 고려하여 window.innerHeight 사용.
     const w = window.innerWidth;
     const h = window.innerHeight;
     const gameW = 800;
     const gameH = 600;
     
-    // 화면에 꽉 차게 하되 비율 유지
-    // 약간의 여백을 두어(0.95) 경계선이 잘리는 느낌 방지 및 UI 터치 오류 방지
+    // Calculate scale to fit window while maintaining aspect ratio
     const scale = Math.min(w / gameW, h / gameH) * 0.95; 
     
     scaler.style.transform = `scale(${scale})`;
@@ -2373,47 +2444,109 @@ function handleResize() {
 // 리사이즈 이벤트 리스너 등록
 window.addEventListener('resize', handleResize);
 
-// 초기 실행 시 리사이징 적용
-handleResize();
-createTitleUI();
-loop();
+// --- Joystick Logic ---
+const joystickZone = document.getElementById('joystick-zone');
+const joystickBase = document.getElementById('joystick-base');
+const joystickHandle = document.getElementById('joystick-handle');
 
-</script>
-</body>
-</html>
+let joystickActive = false;
 
-// function definitions must come before loop call if not hoisted properly in strict mode or modules, 
-// though standard JS hoists functions.
-// loop is defined at the bottom in previous file, let's keep it there but ensure it's defined.
+// 터치 이벤트 핸들러
+if (joystickZone) {
+    const handleStart = (e) => {
+        if (e.cancelable) e.preventDefault();
+        if (gameState !== STATE.PLAYING) return;
+        joystickActive = true;
+        handleMove(e);
+    };
 
-function loop() {
-    update();
-    draw();
-    requestAnimationFrame(loop);
-}
+    const handleMove = (e) => {
+        if (e.cancelable) e.preventDefault();
+        if (!joystickActive) return;
 
-// 화면 리사이징 처리 함수
-function handleResize() {
-    const scaler = document.getElementById('game-scaler');
-    // window.innerWidth/Height는 스크롤바를 포함할 수 있으므로 clientWidth/Height가 안전할 수 있음
-    // 하지만 overflow: hidden body이므로 window도 무방.
-    // 모바일 브라우저 상/하단 바 고려하여 window.innerHeight 사용.
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    const gameW = 800;
-    const gameH = 600;
-    
-    // 화면에 꽉 차게 하되 비율 유지
-    // 약간의 여백을 두어(0.95) 경계선이 잘리는 느낌 방지 및 UI 터치 오류 방지
-    const scale = Math.min(w / gameW, h / gameH) * 0.95; 
-    
-    if (scaler) {
-        scaler.style.transform = `scale(${scale})`;
+        // 터치 좌표 가져오기 (첫 번째 터치)
+        const touch = e.touches ? e.touches[0] : e;
+        
+        // 조이스틱 베이스의 중심 좌표 계산
+        const rect = joystickBase.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        // 중심에서 터치 지점까지의 벡터
+        const dx = touch.clientX - centerX;
+        const dy = touch.clientY - centerY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        // 핸들 이동 제한 (반지름 이내)
+        const maxDist = rect.width / 2 - 35; // 35는 핸들 반지름(approx)
+        const angle = Math.atan2(dy, dx);
+        
+        let moveX = dx;
+        let moveY = dy;
+        
+        if (distance > maxDist) {
+            moveX = Math.cos(angle) * maxDist;
+            moveY = Math.sin(angle) * maxDist;
+        }
+
+        // 핸들 시각적 이동
+        joystickHandle.style.transform = `translate(calc(-50% + ${moveX}px), calc(-50% + ${moveY}px))`;
+
+        // 방향 판별 및 키 입력 업데이트
+        updateDirectionFromAngle(angle, distance);
+    };
+
+    const handleEnd = (e) => {
+        if (e.cancelable) e.preventDefault();
+        joystickActive = false;
+        // 핸들 원위치
+        joystickHandle.style.transform = `translate(-50%, -50%)`;
+        // 키 입력 초기화
+        keys['ArrowUp'] = false;
+        keys['ArrowDown'] = false;
+        keys['ArrowLeft'] = false;
+        keys['ArrowRight'] = false;
+    };
+
+    // 방향 판별 함수 (4방향 -> 8방향 지원으로 개선)
+    function updateDirectionFromAngle(angle, distance) {
+        // 데드존 (너무 조금 움직이면 반응 안함)
+        if (distance < 10) {
+            keys['ArrowUp'] = false;
+            keys['ArrowDown'] = false;
+            keys['ArrowLeft'] = false;
+            keys['ArrowRight'] = false;
+            return;
+        }
+
+        // 모든 키 초기화
+        keys['ArrowUp'] = false;
+        keys['ArrowDown'] = false;
+        keys['ArrowLeft'] = false;
+        keys['ArrowRight'] = false;
+
+        // 각도의 코사인(X성분)과 사인(Y성분)을 구하여 입력 판정
+        // 임계값(Threshold)을 두어 대각선 입력을 허용 (약 20도 범위)
+        const threshold = 0.35; 
+        const xComp = Math.cos(angle);
+        const yComp = Math.sin(angle);
+
+        if (xComp > threshold) keys['ArrowRight'] = true;
+        if (xComp < -threshold) keys['ArrowLeft'] = true;
+        if (yComp > threshold) keys['ArrowDown'] = true;
+        if (yComp < -threshold) keys['ArrowUp'] = true;
     }
-}
 
-// 리사이즈 이벤트 리스너 등록
-window.addEventListener('resize', handleResize);
+    // 이벤트 리스너 등록 ({ passive: false } 로 스크롤 방지)
+    const options = { passive: false };
+    joystickZone.addEventListener('touchstart', handleStart, options);
+    joystickZone.addEventListener('touchmove', handleMove, options);
+    joystickZone.addEventListener('touchend', handleEnd, options);
+    // 마우스 테스트용 (PC에서 모바일 모드 선택 시)
+    joystickZone.addEventListener('mousedown', handleStart);
+    window.addEventListener('mousemove', handleMove); // window에서 감지해야 드래그가 끊기지 않음
+    window.addEventListener('mouseup', handleEnd);
+}
 
 // 초기 실행 시 리사이징 적용
 handleResize();
